@@ -8,7 +8,7 @@
   <name>qapac-api</name>
   <description>Qapac Spring Boot API</description>
   <properties>
-    <java.version>21</java.version>
+    <java.version>17</java.version>
     <spring-boot.version>3.3.4</spring-boot.version>
   </properties>
 

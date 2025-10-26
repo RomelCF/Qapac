@@ -1,10 +1,32 @@
+import { Routes, Route, Navigate } from 'react-router-dom'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import RegisterCompany from './pages/RegisterCompany'
+import RegisterCustomer from './pages/RegisterCustomer'
+import RegisterStep3 from './pages/RegisterStep3'
+import CustomerDashboard from './pages/CustomerDashboard'
+import MyTickets from './pages/MyTickets'
+import BuyTickets from './pages/BuyTickets'
+import MyTransactions from './pages/MyTransactions'
+import MyCards from './pages/MyCards'
+import MyAccount from './pages/MyAccount'
+
 export default function App() {
   return (
-    <div style={{display:'grid',placeItems:'center',minHeight:'100dvh',fontFamily:'system-ui, sans-serif'}}>
-      <div>
-        <h1>Qapac Frontend</h1>
-        <p>React + Vite + TypeScript listo.</p>
-      </div>
-    </div>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/register/empresa" element={<RegisterCompany />} />
+      <Route path="/register/cliente" element={<RegisterCustomer />} />
+      <Route path="/register/paso-3" element={<RegisterStep3 />} />
+      <Route path="/dashboard/cliente" element={<CustomerDashboard />} />
+      <Route path="/dashboard/cliente/pasajes" element={<MyTickets />} />
+      <Route path="/dashboard/cliente/comprar" element={<BuyTickets />} />
+      <Route path="/dashboard/cliente/movimientos" element={<MyTransactions />} />
+      <Route path="/dashboard/cliente/tarjetas" element={<MyCards />} />
+      <Route path="/micuenta" element={<MyAccount />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
   )
 }

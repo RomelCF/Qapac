@@ -21,7 +21,7 @@ public class Empresa {
     @Column(name = "nombre", length = 150, nullable = false)
     private String nombre;
 
-    @Column(name = "RUC", length = 11, nullable = false, unique = true)
+    @Column(name = "RUC", columnDefinition = "CHAR(11)", nullable = false, unique = true)
     private String ruc;
 
     @Column(name = "razon_social", length = 200, nullable = false)

@@ -18,7 +18,7 @@ public class Empleado {
     @Column(name = "id_empleado")
     private Integer idEmpleado;
 
-    @Column(name = "dni", length = 8, nullable = false, unique = true)
+    @Column(name = "dni", columnDefinition = "CHAR(8)", nullable = false, unique = true)
     private String dni;
 
     @Column(name = "telefono", length = 15)

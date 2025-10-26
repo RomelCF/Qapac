@@ -26,8 +26,7 @@ public class MetodoPago {
     @JoinColumn(name = "id_tipo_pago", nullable = false)
     private TipoPago tipoPago;
 
-    @Lob
-    @Column(name = "descripcion")
+    @Column(name = "descripcion", columnDefinition = "TEXT")
     private String descripcion;
 
     @Enumerated(EnumType.STRING)

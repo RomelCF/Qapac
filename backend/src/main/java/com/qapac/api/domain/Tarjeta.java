@@ -36,6 +36,6 @@ public class Tarjeta {
     @Column(name = "fecha_caducidad", nullable = false)
     private LocalDate fechaCaducidad;
 
-    @Column(name = "cvv", length = 3, nullable = false)
+    @Column(name = "cvv", columnDefinition = "CHAR(3)", nullable = false)
     private String cvv;
 }

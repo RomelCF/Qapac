@@ -1,12 +1,55 @@
 <!doctype html>
-<html lang="es">
+<html class="light" lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Qapac Frontend</title>
+    <title>Iniciar Sesión - QhapaqÑan</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#E47A2E",
+              accent: "#C96B2C",
+              "background-light": "#FAF7F3",
+              "background-secondary": "#FFF4E1",
+              "text-primary": "#2B1B10",
+              "text-secondary": "#5C3320",
+              "border-soft": "#E5D5C4",
+              "background-dark-optional": "#3A1E0C",
+            },
+            fontFamily: {
+              display: ["Cinzel", "serif"],
+              body: ["Plus Jakarta Sans", "Noto Sans", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body { font-family: 'Plus Jakarta Sans', sans-serif; }
+      .material-symbols-outlined {
+        font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24;
+      }
+    </style>
   </head>
-  <body>
+  <body class="bg-background-light dark:bg-background-dark-optional">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
-</html>
+  </html>

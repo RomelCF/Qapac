@@ -25,7 +25,7 @@ public class Cliente {
     @Column(name = "domicilio", length = 255)
     private String domicilio;
 
-    @Column(name = "dni", length = 8, nullable = false, unique = true)
+    @Column(name = "dni", columnDefinition = "CHAR(8)", nullable = false, unique = true)
     private String dni;
 
     @Column(name = "telefono", length = 15)
