@@ -5,6 +5,7 @@ import com.qapac.api.domain.Usuario;
 import com.qapac.api.repository.ClienteRepository;
 import com.qapac.api.repository.UsuarioRepository;
 import com.qapac.api.web.dto.CreateClienteRequest;
+import com.qapac.api.web.dto.UpdateClienteRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,5 +45,35 @@ public class ClienteController {
                 .build();
         c = clienteRepository.save(c);
         return ResponseEntity.created(URI.create("/clientes/" + c.getIdCliente())).body(c.getIdCliente());
+    }
+
+    @GetMapping("/by-user/{userId}")
+    public ResponseEntity<?> getByUser(@PathVariable("userId") Integer userId) {
+        var opt = clienteRepository.findByUsuario_IdUsuario(userId);
+        return opt.<ResponseEntity<?>>map(c -> ResponseEntity.ok(new com.qapac.api.web.dto.ClienteResponse(
+                c.getIdCliente(), c.getNombres(), c.getApellidos(), c.getDomicilio(), c.getDni(), c.getTelefono()
+        ))).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{idCliente}")
+    public ResponseEntity<?> getById(@PathVariable("idCliente") Integer idCliente) {
+        Optional<Cliente> opt = clienteRepository.findById(idCliente);
+        return opt.<ResponseEntity<?>>map(c -> ResponseEntity.ok(new com.qapac.api.web.dto.ClienteResponse(
+                c.getIdCliente(), c.getNombres(), c.getApellidos(), c.getDomicilio(), c.getDni(), c.getTelefono()
+        ))).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{idCliente}")
+    public ResponseEntity<?> update(@PathVariable("idCliente") Integer idCliente, @Valid @RequestBody UpdateClienteRequest req) {
+        Optional<Cliente> opt = clienteRepository.findById(idCliente);
+        if (opt.isEmpty()) return ResponseEntity.notFound().build();
+        Cliente c = opt.get();
+        c.setNombres(req.getNombres());
+        c.setApellidos(req.getApellidos());
+        c.setDomicilio(req.getDomicilio());
+        c.setDni(req.getDni());
+        c.setTelefono(req.getTelefono());
+        clienteRepository.save(c);
+        return ResponseEntity.noContent().build();
     }
 }

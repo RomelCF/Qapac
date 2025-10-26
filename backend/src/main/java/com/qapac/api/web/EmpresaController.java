@@ -5,6 +5,7 @@ import com.qapac.api.domain.Usuario;
 import com.qapac.api.repository.EmpresaRepository;
 import com.qapac.api.repository.UsuarioRepository;
 import com.qapac.api.web.dto.CreateEmpresaRequest;
+import com.qapac.api.web.dto.UpdateEmpresaRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -42,5 +43,29 @@ public class EmpresaController {
                 .build();
         e = empresaRepository.save(e);
         return ResponseEntity.created(URI.create("/empresas/" + e.getIdEmpresa())).body(e.getIdEmpresa());
+    }
+
+    @GetMapping("/by-user/{userId}")
+    public ResponseEntity<?> getByUser(@PathVariable Integer userId) {
+        var opt = empresaRepository.findByUsuario_IdUsuario(userId);
+        return opt.<ResponseEntity<?>>map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{idEmpresa}")
+    public ResponseEntity<?> getById(@PathVariable Integer idEmpresa) {
+        Optional<Empresa> opt = empresaRepository.findById(idEmpresa);
+        return opt.<ResponseEntity<?>>map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{idEmpresa}")
+    public ResponseEntity<?> update(@PathVariable Integer idEmpresa, @Valid @RequestBody UpdateEmpresaRequest req) {
+        Optional<Empresa> opt = empresaRepository.findById(idEmpresa);
+        if (opt.isEmpty()) return ResponseEntity.notFound().build();
+        Empresa e = opt.get();
+        e.setNombre(req.getNombre());
+        e.setRuc(req.getRuc());
+        e.setRazonSocial(req.getRazonSocial());
+        empresaRepository.save(e);
+        return ResponseEntity.noContent().build();
     }
 }

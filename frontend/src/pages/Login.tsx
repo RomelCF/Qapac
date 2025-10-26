@@ -51,6 +51,7 @@ export default function Login() {
       if (res.ok && data.success && data.userId) {
         // guardar userId y determinar tipo de cuenta
         localStorage.setItem('userId', String(data.userId))
+        localStorage.setItem('userEmail', email)
         try {
           const profRes = await fetch(`${API_BASE}/auth/profile?userId=${data.userId}`)
           if (profRes.ok) {
