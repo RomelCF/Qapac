@@ -37,6 +37,7 @@ export default function MyAccount() {
 
   const API_BASE = (import.meta as unknown as { env: Record<string, string> }).env?.VITE_API_BASE_URL || 'http://localhost:8080'
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme')
@@ -51,6 +52,7 @@ export default function MyAccount() {
     setEmailLabel(e)
     setEmail(e)
     const uid = localStorage.getItem('userId')
+    setUserId(uid)
     if (!uid) return
     setLoadingProfile(true)
     ;(async () => {
@@ -95,17 +97,41 @@ export default function MyAccount() {
         setLoadingProfile(false)
       }
     })()
+
+    // Cargar logo de usuario si existe
+    ;(async () => {
+      if (!uid) return
+      try {
+        const res = await fetch(`${API_BASE}/usuarios/${uid}/logo`)
+        if (res.ok) {
+          // usar la URL del endpoint para mostrar la imagen
+          setAvatarUrl(`${API_BASE}/usuarios/${uid}/logo?ts=${Date.now()}`)
+        }
+      } catch {}
+    })()
   }, [])
 
   function onPickAvatar() {
     fileRef.current?.click()
   }
 
-  function onAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
     if (!f) return
-    const url = URL.createObjectURL(f)
-    setAvatarUrl(url)
+    if (!userId) { setOk(false); setMsg('No hay sesión'); return }
+    const form = new FormData()
+    form.append('file', f)
+    try {
+      const res = await fetch(`${API_BASE}/usuarios/${userId}/logo`, { method: 'PUT', body: form })
+      if (res.ok) {
+        setAvatarUrl(`${API_BASE}/usuarios/${userId}/logo?ts=${Date.now()}`)
+        setOk(true); setMsg('Logo actualizado')
+      } else {
+        setOk(false); setMsg('No se pudo actualizar el logo')
+      }
+    } catch {
+      setOk(false); setMsg('Error de red al subir el logo')
+    }
   }
 
   function toggleTheme() {
@@ -210,8 +236,10 @@ export default function MyAccount() {
             {avatarUrl ? (
               <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover rounded-full" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center rounded-full text-primary">
-                <span className="material-symbols-outlined" style={{ fontSize: 72 }}>person</span>
+              <div className="w-full h-full flex items-center justify-center rounded-full bg-orange-500">
+                <span className="text-white" style={{ fontSize: 72, lineHeight: 1 }}>
+                  {(emailLabel || email || '?').charAt(0).toUpperCase()}
+                </span>
               </div>
             )}
           </button>

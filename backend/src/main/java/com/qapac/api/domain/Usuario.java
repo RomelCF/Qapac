@@ -24,8 +24,10 @@ public class Usuario {
     @Column(name = "contrasena", length = 255, nullable = false)
     private String contrasena;
 
-    @Column(name = "logo", length = 255)
-    private String logo;
+    @Lob
+    @Basic(fetch = FetchType.LAZY)
+    @Column(name = "logo", columnDefinition = "LONGBLOB")
+    private byte[] logo;
 
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Cliente> clientes;
