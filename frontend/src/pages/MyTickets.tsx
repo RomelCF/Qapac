@@ -7,6 +7,8 @@ type TicketRow = {
   destino: string
   fecha: string
   hora: string
+  fechaLlegada?: string
+  horaLlegada?: string
   // detalle
   empresaNombre?: string
   empresaNumero?: string
@@ -59,6 +61,8 @@ export default function MyTickets() {
           destino: it.destinoProvincia ?? it.destino ?? '-',
           fecha: it.fecha ?? '-',
           hora: it.hora ?? '-',
+          fechaLlegada: it.fechaLlegada,
+          horaLlegada: it.horaLlegada,
           empresaNombre: it.empresaNombre,
           empresaNumero: it.empresaNumero,
           busMatricula: it.busMatricula,
@@ -107,8 +111,8 @@ export default function MyTickets() {
               Mis pasajes
             </Link>
             <Link to="/dashboard/cliente/comprar" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
-              <span className="material-symbols-outlined text-base">shopping_cart</span>
-              Comprar
+              <span className="material-symbols-outlined text-base">directions_bus</span>
+              Catalogo
             </Link>
             <Link to="/dashboard/cliente/movimientos" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
               <span className="material-symbols-outlined text-base">receipt_long</span>
@@ -120,7 +124,9 @@ export default function MyTickets() {
             </Link>
           </nav>
           <div className="flex items-center gap-3">
-            <Link to="/login" className="text-accent hover:text-primary text-sm">Cerrar sesión</Link>
+            <Link to="/dashboard/cliente/carrito" className="h-10 w-10 rounded-full border border-border-soft bg-white/50 flex items-center justify-center hover:border-primary hover:shadow-md" aria-label="Carrito">
+              <span className="material-symbols-outlined">shopping_cart</span>
+            </Link>
             <div className="relative">
               <button type="button" onClick={() => setOpen(v => !v)} aria-haspopup="menu" aria-expanded={open} className="h-10 w-10 rounded-full border border-border-soft bg-white/50 flex items-center justify-center hover:border-primary hover:shadow-md">
                 <span className="material-symbols-outlined">person</span>
@@ -190,7 +196,10 @@ export default function MyTickets() {
               const passFechaHasta = !fFechaHasta || (r.fecha && r.fecha <= fFechaHasta)
               const passHoraDesde = !fHoraDesde || (r.hora && r.hora >= fHoraDesde)
               const passHoraHasta = !fHoraHasta || (r.hora && r.hora <= fHoraHasta)
-              return passOrigen && passDestino && passFechaDesde && passFechaHasta && passHoraDesde && passHoraHasta
+              const llegadaStr = r.fechaLlegada && r.horaLlegada ? `${r.fechaLlegada}T${r.horaLlegada}` : null
+              const llegada = llegadaStr ? new Date(llegadaStr) : null
+              const notFinalizado = llegada ? new Date() <= llegada : true
+              return passOrigen && passDestino && passFechaDesde && passFechaHasta && passHoraDesde && passHoraHasta && notFinalizado
             })
             const count = filtered.length
             return (
@@ -243,12 +252,23 @@ export default function MyTickets() {
                           </tr>
                         </thead>
                         <tbody>
-                          {filtered.map(r => (
-                            <tr key={r.id} className="border-t border-border-soft">
+                          {filtered.map(r => {
+                            const llegadaStr = r.fechaLlegada && r.horaLlegada ? `${r.fechaLlegada}T${r.horaLlegada}` : null
+                            const llegada = llegadaStr ? new Date(llegadaStr) : null
+                            const isFinalizado = llegada ? new Date() > llegada : false
+                            return (
+                            <tr key={r.id} className={`border-t border-border-soft ${isFinalizado ? 'bg-green-50' : ''}`}>
                               <td className="px-4 py-3">{r.origen}</td>
                               <td className="px-4 py-3">{r.destino}</td>
                               <td className="px-4 py-3">{r.fecha}</td>
-                              <td className="px-4 py-3">{r.hora}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2 justify-between">
+                                  <span>{r.hora}</span>
+                                  {isFinalizado && (
+                                    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md bg-green-200 text-green-800">Ya finalizó</span>
+                                  )}
+                                </div>
+                              </td>
                               <td className="px-4 py-3">
                                 <div className="flex justify-end gap-2">
                                   <button onClick={() => setDetail(r)} className="px-3 py-1 rounded-md border border-border-soft hover:border-primary">Ver detalle</button>
@@ -256,7 +276,7 @@ export default function MyTickets() {
                                 </div>
                               </td>
                             </tr>
-                          ))}
+                          )})}
                         </tbody>
                       </table>
                     </div>

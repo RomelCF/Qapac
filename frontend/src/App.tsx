@@ -10,6 +10,9 @@ import BuyTickets from './pages/BuyTickets'
 import MyTransactions from './pages/MyTransactions'
 import MyCards from './pages/MyCards'
 import MyAccount from './pages/MyAccount'
+import Cart from './pages/Cart'
+import PaymentSelect from './pages/PaymentSelect'
+import PaymentCards from './pages/PaymentCards'
 
 export default function App() {
   return (
@@ -22,6 +25,9 @@ export default function App() {
       <Route path="/dashboard/cliente" element={<CustomerDashboard />} />
       <Route path="/dashboard/cliente/pasajes" element={<MyTickets />} />
       <Route path="/dashboard/cliente/comprar" element={<BuyTickets />} />
+      <Route path="/dashboard/cliente/carrito" element={<Cart />} />
+      <Route path="/dashboard/cliente/pago" element={<PaymentSelect />} />
+      <Route path="/dashboard/cliente/pago/tarjetas/:brand" element={<PaymentCards />} />
       <Route path="/dashboard/cliente/movimientos" element={<MyTransactions />} />
       <Route path="/dashboard/cliente/tarjetas" element={<MyCards />} />
       <Route path="/micuenta" element={<MyAccount />} />

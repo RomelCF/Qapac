@@ -23,8 +23,8 @@ export default function CustomerDashboard() {
               Mis pasajes
             </Link>
             <Link to="/dashboard/cliente/comprar" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
-              <span className="material-symbols-outlined text-base">shopping_cart</span>
-              Comprar
+              <span className="material-symbols-outlined text-base">directions_bus</span>
+              Catalogo
             </Link>
             <Link to="/dashboard/cliente/movimientos" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
               <span className="material-symbols-outlined text-base">receipt_long</span>
@@ -36,7 +36,9 @@ export default function CustomerDashboard() {
             </Link>
           </nav>
           <div className="flex items-center gap-3">
-            <Link to="/login" className="text-accent hover:text-primary text-sm">Cerrar sesión</Link>
+            <Link to="/dashboard/cliente/carrito" className="h-10 w-10 rounded-full border border-border-soft bg-white/50 flex items-center justify-center hover:border-primary hover:shadow-md" aria-label="Carrito">
+              <span className="material-symbols-outlined">shopping_cart</span>
+            </Link>
             <div className="relative">
               <button type="button" onClick={() => setOpen(v => !v)} aria-haspopup="menu" aria-expanded={open} className="h-10 w-10 rounded-full border border-border-soft bg-white/50 flex items-center justify-center hover:border-primary hover:shadow-md">
                 <span className="material-symbols-outlined">person</span>
@@ -80,8 +82,8 @@ export default function CustomerDashboard() {
                 </span>
               </div>
               <div className="flex flex-col gap-1">
-                <h2 className="text-xl font-bold leading-tight">Comprar Pasajes</h2>
-                <p className="text-text-secondary text-sm">Busca y compra tus próximos destinos.</p>
+                <h2 className="text-xl font-bold leading-tight">Catálogo</h2>
+                <p className="text-text-secondary text-sm">Explora rutas y elige tus destinos.</p>
               </div>
             </Link>
 

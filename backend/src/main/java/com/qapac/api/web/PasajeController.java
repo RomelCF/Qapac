@@ -21,17 +21,20 @@ public class PasajeController {
     private final AzafatoRepository azafatoRepository;
     private final TelefonoEmpresaRepository telefonoEmpresaRepository;
     private final CarritoRepository carritoRepository;
+    private final AsientoRepository asientoRepository;
 
     public PasajeController(VentaRepository ventaRepository,
                             AsignacionEmpleadoRepository asignacionEmpleadoRepository,
                             TelefonoEmpresaRepository telefonoEmpresaRepository,
                             CarritoRepository carritoRepository,
+                            AsientoRepository asientoRepository,
                             ChoferRepository choferRepository,
                             AzafatoRepository azafatoRepository) {
         this.ventaRepository = ventaRepository;
         this.asignacionEmpleadoRepository = asignacionEmpleadoRepository;
         this.telefonoEmpresaRepository = telefonoEmpresaRepository;
         this.carritoRepository = carritoRepository;
+        this.asientoRepository = asientoRepository;
         this.choferRepository = choferRepository;
         this.azafatoRepository = azafatoRepository;
     }
@@ -42,6 +45,9 @@ public class PasajeController {
         List<PasajeListItem> out = new ArrayList<>();
         for (Venta v : ventas) {
             Carrito carrito = v.getCarrito();
+            if (carrito == null) continue;
+            // Mostrar solo pasajes pagados (no pendientes, no cancelados, no completados)
+            if (carrito.getEstado() != CarritoEstado.pagado) continue;
             if (carrito == null || carrito.getAsignacionRuta() == null) continue;
             AsignacionRuta ar = carrito.getAsignacionRuta();
             Ruta ruta = ar.getRuta();
@@ -82,8 +88,10 @@ public class PasajeController {
                     .idPasaje(v.getIdVenta())
                     .origenProvincia(sOri != null ? sOri.getProvincia() : null)
                     .destinoProvincia(sDes != null ? sDes.getProvincia() : null)
-                    .fecha(v.getFecha() != null ? v.getFecha().toString() : null)
-                    .hora(v.getHora() != null ? v.getHora().toString() : null)
+                    .fecha(ar.getFechaPartida() != null ? ar.getFechaPartida().toString() : null)
+                    .hora(ar.getHoraPartida() != null ? ar.getHoraPartida().toString() : null)
+                    .fechaLlegada(ar.getFechaLlegada() != null ? ar.getFechaLlegada().toString() : null)
+                    .horaLlegada(ar.getHoraLlegada() != null ? ar.getHoraLlegada().toString() : null)
                     .empresaNombre(emp != null ? emp.getNombre() : null)
                     .empresaNumero(telefonoEmp)
                     .busMatricula(bus != null ? bus.getMatricula() : null)
@@ -105,8 +113,15 @@ public class PasajeController {
                     Carrito c = v.getCarrito();
                     if (c != null) {
                         c.setEstado(CarritoEstado.cancelado);
+                        // liberar asiento
+                        Asiento a = c.getAsiento();
+                        if (a != null) {
+                            a.setDisponibilidad(com.qapac.api.domain.enums.Disponibilidad.disponible);
+                            asientoRepository.save(a);
+                        }
                         carritoRepository.save(c);
                     }
+                    // mantener la venta para historial de movimientos; Mis pasajes filtra por estado pagado
                     return ResponseEntity.noContent().build();
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());

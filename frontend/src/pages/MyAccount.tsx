@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import UserAvatar from '../components/UserAvatar'
 
 export default function MyAccount() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
@@ -212,8 +213,8 @@ export default function MyAccount() {
           <div className="flex items-center gap-3">
             <Link to="/login" className="text-accent hover:text-primary text-sm">Cerrar sesión</Link>
             <div className="relative">
-              <button type="button" onClick={() => setOpen(v => !v)} aria-haspopup="menu" aria-expanded={open} className="h-10 w-10 rounded-full border border-border-soft bg-white/50 flex items-center justify-center hover:border-primary hover:shadow-md">
-                <span className="material-symbols-outlined">person</span>
+              <button type="button" onClick={() => setOpen(v => !v)} aria-haspopup="menu" aria-expanded={open} className="rounded-full hover:border-primary hover:shadow-md">
+                <UserAvatar size={40} />
               </button>
               {open && (
                 <div className="absolute right-0 mt-2 w-56 rounded-lg border border-border-soft bg-white shadow-xl p-3 z-20">
@@ -232,16 +233,8 @@ export default function MyAccount() {
         <h1 className="font-display text-3xl text-primary text-center mb-8">Mi cuenta</h1>
 
         <div className="flex flex-col items-center mb-10">
-          <button onClick={onPickAvatar} className="relative rounded-full border-2 border-border-soft bg-white/70 hover:border-primary hover:shadow-xl transition aspect-square" style={{ width: 160, height: 160 }} aria-label="Cambiar foto de perfil">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover rounded-full" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center rounded-full bg-orange-500">
-                <span className="text-white" style={{ fontSize: 72, lineHeight: 1 }}>
-                  {(emailLabel || email || '?').charAt(0).toUpperCase()}
-                </span>
-              </div>
-            )}
+          <button onClick={onPickAvatar} className="relative rounded-full hover:border-primary hover:shadow-xl transition" style={{ width: 160, height: 160 }} aria-label="Cambiar foto de perfil">
+            <UserAvatar size={160} />
           </button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onAvatarChange} />
           <p className="mt-3 text-text-secondary text-sm">Haz click para cambiar tu foto de perfil</p>
