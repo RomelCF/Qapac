@@ -9,6 +9,19 @@ type CardItem = {
   metodoPago?: string
 }
 
+type CartRow = {
+  idCarrito: number
+  origenProvincia?: string
+  destinoProvincia?: string
+  fecha?: string
+  hora?: string
+  empresaNombre?: string
+  empresaNumero?: string
+  busMatricula?: string
+  seatCode?: string
+  precio?: number | string
+}
+
 export default function PaymentCards() {
   const { brand } = useParams()
   const navigate = useNavigate()
@@ -18,9 +31,19 @@ export default function PaymentCards() {
   const [open, setOpen] = useState(false)
   const [emailLabel, setEmailLabel] = useState('')
   const [methods, setMethods] = useState<{ idMetodoPago: number; nombre: string; comision?: number }[]>([])
-  const [cartRows, setCartRows] = useState<{ precio?: number }[]>([])
+  const [cartRows, setCartRows] = useState<CartRow[]>([])
   const [confirmData, setConfirmData] = useState<{ cardId: number; bruto: number; comision: number; neto: number; metodoId: number } | null>(null)
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [successData, setSuccessData] = useState<{
+    totalBruto: number;
+    totalNeto: number;
+    comision: number;
+    metodo: string;
+    tarjetaMasked?: string;
+    fecha: string;
+    hora: string;
+    items: CartRow[];
+  } | null>(null)
 
   const API_BASE = (import.meta as unknown as { env: Record<string, string> }).env?.VITE_API_BASE_URL || 'http://localhost:8080'
 
@@ -103,15 +126,97 @@ export default function PaymentCards() {
         body: JSON.stringify({ idCliente: p.idCliente, idMetodoPago: confirmData.metodoId, idTarjeta: confirmData.cardId })
       })
       if (res.ok) {
-        setToast({ type: 'success', message: 'Compra realizada con éxito' })
+        // Preparar datos para boleta y mostrar modal de éxito
+        const now = new Date()
+        const m = methods.find(x => x.idMetodoPago === confirmData.metodoId)?.nombre || brandName
+        const cardMasked = (filtered.find(c => c.idTarjeta === confirmData.cardId)?.numeroMasked) || undefined
+        setSuccessData({
+          totalBruto: confirmData.bruto,
+          totalNeto: confirmData.neto,
+          comision: confirmData.comision,
+          metodo: m,
+          tarjetaMasked: cardMasked,
+          fecha: now.toLocaleDateString(),
+          hora: now.toLocaleTimeString(),
+          items: cartRows || [],
+        })
         setConfirmData(null)
-        setTimeout(() => navigate('/dashboard/cliente'), 800)
       } else {
         const msg = await res.text(); setToast({ type: 'error', message: msg || 'No se pudo completar el pago' })
       }
     } catch {
       setToast({ type: 'error', message: 'Error de red al confirmar pago' })
     }
+  }
+
+  function downloadReceipt() {
+    if (!successData) return
+    const w = window.open('', '_blank')
+    if (!w) return
+    const styles = `
+      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial; color: #0f172a; }
+      .card { max-width: 720px; margin: 24px auto; border: 2px solid #e5e7eb; border-radius: 12px; padding: 20px; background: #ffffff; }
+      .row { display: flex; justify-content: space-between; margin: 6px 0; }
+      .muted { color: #64748b; }
+      .title { font-size: 20px; color: #2563eb; font-weight: 700; margin: 0 0 12px; text-align: center; }
+      .logo { height: 56px; }
+      .hr { height: 2px; background: #f1f5f9; border: 0; margin: 12px 0; }
+      .badge { display: inline-block; padding: 2px 8px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 9999px; color: #1d4ed8; font-size: 12px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+      th, td { border: 1px solid #e5e7eb; padding: 6px 8px; font-size: 12px; text-align: left; }
+      th { background: #f8fafc; }
+    `
+    const items = (successData.items || [])
+    const rowsHtml = items.map(it => (
+      `<tr>
+         <td>${it.origenProvincia ?? '-'}</td>
+         <td>${it.destinoProvincia ?? '-'}</td>
+         <td>${it.fecha ?? '-'}</td>
+         <td>${it.hora ?? '-'}</td>
+         <td>${it.empresaNombre ?? '-'}</td>
+         <td>${it.busMatricula ?? '-'}</td>
+         <td>${it.seatCode ?? '-'}</td>
+         <td>S/ ${Number(it.precio ?? 0).toFixed(2)}</td>
+       </tr>`
+    )).join('')
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Boleta - Qapac</title><style>${styles}</style></head><body>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <img class="logo" src="${location.origin}/assets/logo.png" alt="Logo"/>
+          <div class="badge">Pago satisfactorio</div>
+        </div>
+        <h1 class="title">Boleta de compra</h1>
+        <div class="row"><div class="muted">Fecha</div><div>${successData.fecha}</div></div>
+        <div class="row"><div class="muted">Hora</div><div>${successData.hora}</div></div>
+        <hr class="hr"/>
+        <div class="row"><div class="muted">Método de pago</div><div>${successData.metodo}</div></div>
+        ${successData.tarjetaMasked ? `<div class="row"><div class="muted">Tarjeta</div><div>${successData.tarjetaMasked}</div></div>` : ''}
+        <hr class="hr"/>
+        <div class="muted" style="margin: 6px 0;">Detalle de pasajes</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Origen</th>
+              <th>Destino</th>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Empresa</th>
+              <th>Bus</th>
+              <th>Asiento</th>
+              <th>Precio</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+        <hr class="hr"/>
+        <div class="row"><div>Total bruto</div><div>S/ ${successData.totalBruto.toFixed(2)}</div></div>
+        <div class="row"><div>Comisión (${successData.comision}%)</div><div>S/ ${(successData.totalBruto * (successData.comision/100)).toFixed(2)}</div></div>
+        <div class="row" style="font-weight:700;"><div>Total pagado</div><div>S/ ${successData.totalNeto.toFixed(2)}</div></div>
+        <p class="muted" style="margin-top:12px;">Gracias por su compra.</p>
+      </div>
+      <script>window.onload = () => { window.print(); setTimeout(() => window.close(), 300); }<\/script>
+    </body></html>`
+    w.document.open(); w.document.write(html); w.document.close();
   }
 
   return (
@@ -158,6 +263,54 @@ export default function PaymentCards() {
                   </div>
                 </div>
               )}
+
+  {successData && (
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50" role="dialog" aria-modal="true">
+      <div className="w-full max-w-md rounded-xl bg-background-secondary border-2 border-border-soft shadow-2xl">
+        <div className="flex items-center justify-between p-4 border-b border-border-soft">
+          <h2 className="font-display text-xl">Pago exitoso</h2>
+          <button onClick={() => setSuccessData(null)} className="text-text-secondary hover:text-primary" aria-label="Cerrar">
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div className="p-4 text-sm">
+          <div className="rounded-lg border border-border-soft bg-white/50 p-3">
+            <div className="flex items-center justify-between">
+              <div className="font-bold text-primary">Pago satisfactorio</div>
+              <img src="/assets/logo.png" alt="Logo" className="h-10" />
+            </div>
+            <div className="mt-3 flex justify-between"><span>Fecha</span><span>{successData.fecha}</span></div>
+            <div className="flex justify-between"><span>Hora</span><span>{successData.hora}</span></div>
+            <div className="mt-2 flex justify-between"><span>Método</span><span>{successData.metodo}</span></div>
+            {successData.tarjetaMasked && (
+              <div className="flex justify-between"><span>Tarjeta</span><span>{successData.tarjetaMasked}</span></div>
+            )}
+            <div className="mt-3">
+              <div className="font-semibold mb-1">Detalle</div>
+              <div className="space-y-1 max-h-48 overflow-auto pr-1">
+                {(successData.items || []).map((it) => (
+                  <div key={it.idCarrito} className="flex items-center justify-between text-xs">
+                    <div className="text-text-secondary">
+                      {it.origenProvincia} → {it.destinoProvincia} • {it.fecha} {it.hora} • Asiento {it.seatCode}
+                    </div>
+                    <div>S/ {Number(it.precio ?? 0).toFixed(2)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="mt-2 flex justify-between"><span>Total pagado</span><span>S/ {successData.totalNeto.toFixed(2)}</span></div>
+          </div>
+        </div>
+        <div className="p-4 border-t border-border-soft flex justify-end gap-2">
+          <button onClick={downloadReceipt} className="px-4 py-2 rounded-lg border border-border-soft hover:border-primary inline-flex items-center gap-2">
+            <span className="material-symbols-outlined">download</span>
+            Descargar boleta (PDF)
+          </button>
+          <button onClick={() => { setSuccessData(null); navigate('/dashboard/cliente'); }} className="px-4 py-2 rounded-lg bg-primary text-white hover:opacity-90">Continuar</button>
+        </div>
+      </div>
+    </div>
+  )}
             </div>
           </div>
         </div>

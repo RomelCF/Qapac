@@ -77,6 +77,15 @@ public class CompraController {
                     .filter(s -> !s.isEmpty())
                     .collect(Collectors.toList());
 
+            Integer total = null;
+            Integer disponibles = null;
+            if (bus != null) {
+                long totalL = asientoRepository.countByBus_IdBus(bus.getIdBus());
+                long dispL = asientoRepository.countByBus_IdBusAndDisponibilidad(bus.getIdBus(), Disponibilidad.disponible);
+                total = (int) totalL;
+                disponibles = (int) dispL;
+            }
+
             CompraOptionItem item = CompraOptionItem.builder()
                     .idAsignacionRuta(ar.getIdAsignacionRuta())
                     .origenProvincia(sOri != null ? sOri.getProvincia() : null)
@@ -87,6 +96,8 @@ public class CompraController {
                     .empresaNumero(telefonoEmp)
                     .busMatricula(bus != null ? bus.getMatricula() : null)
                     .precio(ruta.getPrecio())
+                    .disponibles(disponibles)
+                    .total(total)
                     .choferes(choferes)
                     .azafatos(azafatos)
                     .sucursalOrigen(sOri != null ? new com.qapac.api.web.dto.PasajeListItem.SucursalInfo(sOri.getNombre(), sOri.getProvincia(), sOri.getDireccion()) : null)
@@ -144,16 +155,20 @@ public class CompraController {
             asientoSeleccionado = libre;
         }
 
-        asientoSeleccionado.setDisponibilidad(Disponibilidad.ocupado);
-        asientoRepository.save(asientoSeleccionado);
-
-        Carrito c = Carrito.builder()
+        // Creamos un nuevo registro en la tabla Pasaje con estado 'pendiente'
+        Carrito nuevoItem = Carrito.builder()
                 .cliente(cliOpt.get())
                 .asignacionRuta(ar)
                 .asiento(asientoSeleccionado)
                 .estado(CarritoEstado.pendiente)
                 .build();
-        c = carritoRepository.save(c);
-        return ResponseEntity.ok(c.getIdCarrito());
+        
+        // Guardamos el nuevo ítem en la base de datos
+        nuevoItem = carritoRepository.save(nuevoItem);
+        
+        // No marcamos el asiento como ocupado aquí, solo se marcará cuando se complete la venta
+        // El estado 'pendiente' indica que está en el carrito pero no se ha pagado
+        
+        return ResponseEntity.ok(nuevoItem.getIdCarrito());
     }
 }

@@ -12,18 +12,18 @@ import java.time.LocalTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "AsignacionRuta")
+@Table(name = "Viaje")
 public class AsignacionRuta {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_asignacion_ruta")
+    @Column(name = "id_viaje")
     private Integer idAsignacionRuta;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "id_ruta", nullable = false)
     private Ruta ruta;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "id_bus", nullable = false)
     private Bus bus;
 

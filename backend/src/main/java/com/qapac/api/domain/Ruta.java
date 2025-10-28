@@ -19,11 +19,15 @@ public class Ruta {
     @Column(name = "id_ruta")
     private Integer idRuta;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_empresa", nullable = false)
+    private Empresa empresa;
+
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "id_sucursal_origen", nullable = false)
     private Sucursal sucursalOrigen;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "id_sucursal_destino", nullable = false)
     private Sucursal sucursalDestino;
 

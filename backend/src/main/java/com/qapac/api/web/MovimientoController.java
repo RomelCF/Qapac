@@ -21,25 +21,25 @@ import java.util.Set;
 @RequestMapping("/movimientos")
 public class MovimientoController {
 
-    private final VentaRepository ventaRepository;
+    private final DetalleVentaRepository detalleVentaRepository;
     private final TelefonoEmpresaRepository telefonoEmpresaRepository;
     private final CarritoRepository carritoRepository;
 
-    public MovimientoController(VentaRepository ventaRepository,
+    public MovimientoController(DetalleVentaRepository detalleVentaRepository,
                                 TelefonoEmpresaRepository telefonoEmpresaRepository,
                                 CarritoRepository carritoRepository) {
-        this.ventaRepository = ventaRepository;
+        this.detalleVentaRepository = detalleVentaRepository;
         this.telefonoEmpresaRepository = telefonoEmpresaRepository;
         this.carritoRepository = carritoRepository;
     }
 
     @GetMapping("/cliente/{idCliente}")
     public ResponseEntity<List<MovimientoItem>> list(@PathVariable("idCliente") Integer idCliente) {
-        List<Venta> ventas = ventaRepository.findByCarrito_Cliente_IdCliente(idCliente);
+        List<DetalleVenta> detalles = detalleVentaRepository.findByPasaje_Cliente_IdCliente(idCliente);
         List<MovimientoItem> out = new ArrayList<>();
         Set<Integer> handledCarritos = new HashSet<>();
-        for (Venta v : ventas) {
-            Carrito c = v.getCarrito();
+        for (DetalleVenta dv : detalles) {
+            Carrito c = dv.getPasaje();
             if (c == null || c.getAsignacionRuta() == null) continue;
             AsignacionRuta ar = c.getAsignacionRuta();
             Ruta ruta = ar.getRuta();
@@ -48,8 +48,9 @@ public class MovimientoController {
             Sucursal sDes = ruta.getSucursalDestino();
             Bus bus = ar.getBus();
             Empresa emp = bus != null ? bus.getEmpresa() : null;
-            MetodoPago mp = v.getMetodoPago();
-            Tarjeta tj = v.getTarjeta();
+            Venta v = dv.getVenta();
+            MetodoPago mp = v != null ? v.getMetodoPago() : null;
+            Tarjeta tj = v != null ? v.getTarjeta() : null;
 
             double precio = ruta.getPrecio() != null ? ruta.getPrecio().doubleValue() : 0.0;
             double comisionPct = (mp != null && mp.getComision() != null) ? mp.getComision().doubleValue() : 0.0;
@@ -86,8 +87,8 @@ public class MovimientoController {
 
             MovimientoItem item = MovimientoItem.builder()
                     .tipo(tipo)
-                    .fecha(v.getFecha() != null ? v.getFecha().toString() : (LocalDate.now().toString()))
-                    .hora(v.getHora() != null ? v.getHora().toString() : (LocalTime.now().toString()))
+                    .fecha(v != null && v.getFecha() != null ? v.getFecha().toString() : (LocalDate.now().toString()))
+                    .hora(v != null && v.getHora() != null ? v.getHora().toString() : (LocalTime.now().toString()))
                     .origen(sOri != null ? sOri.getProvincia() : null)
                     .destino(sDes != null ? sDes.getProvincia() : null)
                     .fechaSalida(ar.getFechaPartida() != null ? ar.getFechaPartida().toString() : null)

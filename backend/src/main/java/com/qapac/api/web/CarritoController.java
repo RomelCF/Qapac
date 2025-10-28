@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 public class CarritoController {
 
     private final CarritoRepository carritoRepository;
-    private final VentaRepository ventaRepository;
+    private final DetalleVentaRepository detalleVentaRepository;
     private final AsignacionEmpleadoRepository asignacionEmpleadoRepository;
     private final TelefonoEmpresaRepository telefonoEmpresaRepository;
     private final ChoferRepository choferRepository;
@@ -26,14 +26,14 @@ public class CarritoController {
     private final AsientoRepository asientoRepository;
 
     public CarritoController(CarritoRepository carritoRepository,
-                             VentaRepository ventaRepository,
+                             DetalleVentaRepository detalleVentaRepository,
                              AsignacionEmpleadoRepository asignacionEmpleadoRepository,
                              TelefonoEmpresaRepository telefonoEmpresaRepository,
                              ChoferRepository choferRepository,
                              AzafatoRepository azafatoRepository,
                              AsientoRepository asientoRepository) {
         this.carritoRepository = carritoRepository;
-        this.ventaRepository = ventaRepository;
+        this.detalleVentaRepository = detalleVentaRepository;
         this.asignacionEmpleadoRepository = asignacionEmpleadoRepository;
         this.telefonoEmpresaRepository = telefonoEmpresaRepository;
         this.choferRepository = choferRepository;
@@ -43,15 +43,22 @@ public class CarritoController {
 
     @GetMapping("/cliente/{idCliente}")
     public ResponseEntity<List<CarritoListItem>> listPendientes(@PathVariable("idCliente") Integer idCliente) {
+        System.out.println("Buscando carritos para el cliente: " + idCliente);
         List<Carrito> carritos = carritoRepository.findByCliente_IdCliente(idCliente);
+        System.out.println("Carritos encontrados: " + carritos.size());
         List<CarritoListItem> out = new ArrayList<>();
         for (Carrito c : carritos) {
-            if (c.getAsignacionRuta() == null) continue;
-            if (c.getEstado() != CarritoEstado.pendiente) continue;
+            System.out.println("Procesando carrito ID: " + c.getIdCarrito() + ", Estado: " + c.getEstado());
+            if (c.getAsignacionRuta() == null) {
+                System.out.println("Carrito " + c.getIdCarrito() + " sin asignación de ruta, omitiendo...");
+                continue;
+            }
+            // Mostrar todos los carritos, no solo los pendientes
+            // if (c.getEstado() != CarritoEstado.pendiente) continue;
             AsignacionRuta ar = c.getAsignacionRuta();
             LocalDate f = ar.getFechaPartida();
             LocalTime h = ar.getHoraPartida();
-            boolean vendido = ventaRepository.existsByCarrito_IdCarrito(c.getIdCarrito());
+            boolean vendido = detalleVentaRepository.existsByPasaje_IdCarrito(c.getIdCarrito());
             if (vendido) continue;
 
             Ruta ruta = ar.getRuta();
@@ -60,25 +67,18 @@ public class CarritoController {
             Sucursal sDes = ruta.getSucursalDestino();
             Bus bus = ar.getBus();
             Empresa emp = bus != null ? bus.getEmpresa() : null;
-            // limpieza: si ya inició, borrar carrito no vendido
+            // si ya inició, no mostrar el carrito (pero no eliminar)
             boolean yaInicio = false;
             if (f != null && h != null) {
                 var salida = java.time.LocalDateTime.of(f, h);
                 yaInicio = java.time.LocalDateTime.now().isAfter(salida) || java.time.LocalDateTime.now().isEqual(salida);
             }
             if (yaInicio) {
-                carritoRepository.delete(c);
-                continue;
-            }
-            // limpieza: si ventas alcanzan capacidad del bus, borrar carrito
-            if (bus != null) {
-                long vendidos = ventaRepository.countByCarrito_AsignacionRuta_IdAsignacionRuta(ar.getIdAsignacionRuta());
-                long capacidad = asientoRepository.countByBus_IdBus(bus.getIdBus());
-                if (capacidad > 0 && vendidos >= capacidad) {
-                    carritoRepository.delete(c);
+                if (c.getEstado() != null && c.getEstado() != CarritoEstado.pendiente) {
                     continue;
                 }
             }
+            // No ocultar por capacidad alcanzada: el carrito del usuario debe mostrar sus ítems
             String telefonoEmp = null;
             if (emp != null) {
                 TelefonoEmpresa t = telefonoEmpresaRepository.findFirstByEmpresa_IdEmpresaOrderByIdTelefonoEmpresaAsc(emp.getIdEmpresa());
@@ -131,7 +131,7 @@ public class CarritoController {
     public ResponseEntity<?> eliminar(@PathVariable("id") Integer id) {
         return carritoRepository.findById(id)
                 .map(c -> {
-                    boolean vendido = ventaRepository.existsByCarrito_IdCarrito(c.getIdCarrito());
+                    boolean vendido = detalleVentaRepository.existsByPasaje_IdCarrito(c.getIdCarrito());
                     if (vendido) {
                         return ResponseEntity.status(409).body("El carrito ya fue vendido");
                     }

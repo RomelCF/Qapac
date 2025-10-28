@@ -22,6 +22,8 @@ public class CompraOptionItem {
     private String empresaNumero;
     private String busMatricula;
     private BigDecimal precio;
+    private Integer disponibles;
+    private Integer total;
     private List<String> choferes;
     private List<String> azafatos;
     private PasajeListItem.SucursalInfo sucursalOrigen;

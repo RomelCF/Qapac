@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "MetodoPago")
+@Table(name = "metodopago")
 public class MetodoPago {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,17 +22,17 @@ public class MetodoPago {
     @Column(name = "nombre", length = 100, nullable = false)
     private String nombre;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "id_tipo_pago", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_tipo_pago", referencedColumnName = "id_tipo_pago", nullable = false)
     private TipoPago tipoPago;
 
     @Column(name = "descripcion", columnDefinition = "TEXT")
     private String descripcion;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado")
+    @Column(name = "estado", nullable = false, length = 20)
     private ActivoInactivo estado;
 
-    @Column(name = "comision", precision = 5, scale = 2)
+    @Column(name = "comision", precision = 5, scale = 2, nullable = false)
     private BigDecimal comision;
 }

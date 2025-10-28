@@ -3,12 +3,16 @@ package com.qapac.api.web;
 import com.qapac.api.domain.MetodoPago;
 import com.qapac.api.domain.Carrito;
 import com.qapac.api.domain.Venta;
+import com.qapac.api.domain.Asiento;
+import com.qapac.api.repository.AsientoRepository;
 import com.qapac.api.domain.Tarjeta;
+import com.qapac.api.domain.DetalleVenta;
 import com.qapac.api.domain.enums.CarritoEstado;
 import com.qapac.api.repository.MetodoPagoRepository;
 import com.qapac.api.repository.CarritoRepository;
 import com.qapac.api.repository.VentaRepository;
 import com.qapac.api.repository.TarjetaRepository;
+import com.qapac.api.repository.DetalleVentaRepository;
 import com.qapac.api.web.dto.PaymentMethodItem;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,15 +32,21 @@ public class PaymentController {
     private final CarritoRepository carritoRepository;
     private final VentaRepository ventaRepository;
     private final TarjetaRepository tarjetaRepository;
+    private final DetalleVentaRepository detalleVentaRepository;
+    private final AsientoRepository asientoRepository;
 
     public PaymentController(MetodoPagoRepository metodoPagoRepository,
                              CarritoRepository carritoRepository,
                              VentaRepository ventaRepository,
-                             TarjetaRepository tarjetaRepository) {
+                             TarjetaRepository tarjetaRepository,
+                             DetalleVentaRepository detalleVentaRepository,
+                             AsientoRepository asientoRepository) {
         this.metodoPagoRepository = metodoPagoRepository;
         this.carritoRepository = carritoRepository;
         this.ventaRepository = ventaRepository;
         this.tarjetaRepository = tarjetaRepository;
+        this.detalleVentaRepository = detalleVentaRepository;
+        this.asientoRepository = asientoRepository;
     }
 
     @GetMapping
@@ -73,7 +83,7 @@ public class PaymentController {
         for (Carrito c : carritos) {
             if (c.getAsignacionRuta() == null) continue;
             // saltar si ya vendido o estado no pendiente
-            boolean vendido = ventaRepository.existsByCarrito_IdCarrito(c.getIdCarrito());
+            boolean vendido = detalleVentaRepository.existsByPasaje_IdCarrito(c.getIdCarrito());
             if (vendido) continue;
             if (c.getEstado() != null && c.getEstado() != CarritoEstado.pendiente) continue;
             // crear venta
@@ -82,12 +92,23 @@ public class PaymentController {
                     .tarjeta(tarjeta)
                     .fecha(hoy)
                     .hora(ahora)
-                    .carrito(c)
                     .build();
-            ventaRepository.save(v);
-            // marcar carrito pagado
+            v = ventaRepository.save(v);
+            // crear detalle
+            DetalleVenta dv = DetalleVenta.builder()
+                    .venta(v)
+                    .pasaje(c)
+                    .build();
+            detalleVentaRepository.save(dv);
+            // Actualizar el estado del pasaje a 'pagado'
             c.setEstado(CarritoEstado.pagado);
             carritoRepository.save(c);
+            
+            // Marcar el asiento como ocupado
+            if (c.getAsiento() != null) {
+                c.getAsiento().setDisponibilidad(com.qapac.api.domain.enums.Disponibilidad.ocupado);
+                asientoRepository.save(c.getAsiento());
+            }
             created++;
         }
         return ResponseEntity.ok(created);

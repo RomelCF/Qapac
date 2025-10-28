@@ -8,6 +8,8 @@ type OptionRow = {
   fecha: string
   hora: string
   precio: number
+  disponibles?: number
+  total?: number
   empresaNombre?: string
   empresaNumero?: string
   busMatricula?: string
@@ -25,7 +27,7 @@ export default function BuyTickets() {
   const [open, setOpen] = useState(false)
   const [emailLabel, setEmailLabel] = useState('')
   const [adding, setAdding] = useState<number | null>(null)
-  const [seatPicker, setSeatPicker] = useState<{ idAsignacionRuta: number; seats: { idAsiento: number; codigo: string; disponibilidad: string }[]; loading: boolean; selectedId: number | null } | null>(null)
+  const [seatPicker, setSeatPicker] = useState<{ idAsignacionRuta: number; seats: { idAsiento: number; codigo: string; disponibilidad: string }[]; loading: boolean; selectedIds: number[] } | null>(null)
   const [fOrigen, setFOrigen] = useState('')
   const [fDestino, setFDestino] = useState('')
   const [fFechaDesde, setFFechaDesde] = useState('')
@@ -53,6 +55,8 @@ export default function BuyTickets() {
           fecha: it.fecha ?? '-',
           hora: it.hora ?? '-',
           precio: Number(it.precio ?? 0),
+          disponibles: it.disponibles != null ? Number(it.disponibles) : undefined,
+          total: it.total != null ? Number(it.total) : undefined,
           empresaNombre: it.empresaNombre,
           empresaNumero: it.empresaNumero,
           busMatricula: it.busMatricula,
@@ -93,7 +97,6 @@ export default function BuyTickets() {
       })
       if (res.ok) {
         setToast({ type: 'success', message: 'Añadido al carrito' })
-        setSeatPicker(null)
       } else {
         const msg = await res.text()
         setToast({ type: 'error', message: msg || 'No se pudo añadir al carrito' })
@@ -106,15 +109,33 @@ export default function BuyTickets() {
   }
 
   async function openSeatPicker(idAsignacionRuta: number) {
-    setSeatPicker({ idAsignacionRuta, seats: [], loading: true, selectedId: null })
+    setSeatPicker({ idAsignacionRuta, seats: [], loading: true, selectedIds: [] })
     try {
       const res = await fetch(`${API_BASE}/compras/asientos/${idAsignacionRuta}`)
       if (!res.ok) { setSeatPicker(null); setToast({ type: 'error', message: 'No se pudieron cargar los asientos' }); return }
       const seats = await res.json()
-      setSeatPicker({ idAsignacionRuta, seats, loading: false, selectedId: null })
+      setSeatPicker({ idAsignacionRuta, seats, loading: false, selectedIds: [] })
     } catch {
       setSeatPicker(null)
       setToast({ type: 'error', message: 'Error de red al cargar asientos' })
+    }
+  }
+
+  async function confirmSelectedSeats() {
+    if (!seatPicker || seatPicker.selectedIds.length === 0) return
+    const ids = [...seatPicker.selectedIds]
+    setAdding(seatPicker.idAsignacionRuta)
+    try {
+      // Añadir todos los asientos seleccionados (una solicitud por asiento)
+      for (const sid of ids) {
+        await addToCartDirect(seatPicker.idAsignacionRuta, sid)
+      }
+      setToast({ type: 'success', message: `Añadidos ${ids.length} asientos al carrito` })
+    } catch {
+      setToast({ type: 'error', message: 'Error al añadir asientos seleccionados' })
+    } finally {
+      setAdding(null)
+      setSeatPicker(null)
     }
   }
 
@@ -238,6 +259,7 @@ export default function BuyTickets() {
                     <th className="px-4 py-3">Fecha</th>
                     <th className="px-4 py-3">Hora</th>
                     <th className="px-4 py-3">Precio</th>
+                    <th className="px-4 py-3">Disponibilidad</th>
                     <th className="px-4 py-3 text-right">Acciones</th>
                   </tr>
                 </thead>
@@ -249,6 +271,17 @@ export default function BuyTickets() {
                       <td className="px-4 py-3">{r.fecha}</td>
                       <td className="px-4 py-3">{r.hora}</td>
                       <td className="px-4 py-3">S/ {r.precio.toFixed(2)}</td>
+                      <td className="px-4 py-3">
+                        {(() => {
+                          const total = r.total ?? 0
+                          const disp = r.disponibles ?? 0
+                          if (total === 0 || disp === 0) {
+                            return <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-red-100 text-red-700 border border-red-200">Agotado</span>
+                          }
+                          const cls = disp < 5 ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : 'bg-green-100 text-green-800 border-green-200'
+                          return <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs border ${cls}`}>{disp}/{total}</span>
+                        })()}
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
                           <button onClick={() => setDetail(r)} className="px-3 py-1 rounded-md border border-border-soft hover:border-primary">Ver detalle</button>
@@ -348,7 +381,7 @@ export default function BuyTickets() {
                             {/* Izquierda (2) */}
                             {row.slice(0, 2).map(s => {
                               const disp = (s.disponibilidad || '').toLowerCase()
-                              const isSelected = seatPicker.selectedId === s.idAsiento
+                              const isSelected = seatPicker.selectedIds.includes(s.idAsiento)
                               let cls = 'bg-green-500'
                               if (disp === 'mantenimiento') cls = 'bg-yellow-400'
                               if (disp === 'ocupado') cls = 'bg-red-500'
@@ -357,7 +390,13 @@ export default function BuyTickets() {
                               return (
                                 <button
                                   key={s.idAsiento}
-                                  onClick={() => clickable && setSeatPicker(prev => prev ? { ...prev, selectedId: s.idAsiento } : prev)}
+                                  onClick={() => clickable && setSeatPicker(prev => {
+                                    if (!prev) return prev
+                                    const sel = prev.selectedIds
+                                    const exists = sel.includes(s.idAsiento)
+                                    const next = exists ? sel.filter(x => x !== s.idAsiento) : [...sel, s.idAsiento]
+                                    return { ...prev, selectedIds: next }
+                                  })}
                                   className={`h-10 rounded-md text-white text-xs font-medium flex items-center justify-center ${cls} ${clickable ? 'hover:opacity-90' : 'opacity-70 cursor-not-allowed'}`}
                                   title={`Asiento ${s.codigo} - ${s.disponibilidad}`}
                                 >
@@ -370,7 +409,7 @@ export default function BuyTickets() {
                             {/* Derecha (2) */}
                             {row.slice(2, 4).map(s => {
                               const disp = (s.disponibilidad || '').toLowerCase()
-                              const isSelected = seatPicker.selectedId === s.idAsiento
+                              const isSelected = seatPicker.selectedIds.includes(s.idAsiento)
                               let cls = 'bg-green-500'
                               if (disp === 'mantenimiento') cls = 'bg-yellow-400'
                               if (disp === 'ocupado') cls = 'bg-red-500'
@@ -379,7 +418,13 @@ export default function BuyTickets() {
                               return (
                                 <button
                                   key={s.idAsiento}
-                                  onClick={() => clickable && setSeatPicker(prev => prev ? { ...prev, selectedId: s.idAsiento } : prev)}
+                                  onClick={() => clickable && setSeatPicker(prev => {
+                                    if (!prev) return prev
+                                    const sel = prev.selectedIds
+                                    const exists = sel.includes(s.idAsiento)
+                                    const next = exists ? sel.filter(x => x !== s.idAsiento) : [...sel, s.idAsiento]
+                                    return { ...prev, selectedIds: next }
+                                  })}
                                   className={`h-10 rounded-md text-white text-xs font-medium flex items-center justify-center ${cls} ${clickable ? 'hover:opacity-90' : 'opacity-70 cursor-not-allowed'}`}
                                   title={`Asiento ${s.codigo} - ${s.disponibilidad}`}
                                 >
@@ -402,7 +447,7 @@ export default function BuyTickets() {
               </div>
               <div className="p-4 border-t border-border-soft flex justify-end gap-2">
                 <button onClick={() => setSeatPicker(null)} className="px-4 py-2 rounded-lg border border-border-soft hover:border-primary">Cancelar</button>
-                <button disabled={!seatPicker.selectedId || adding === seatPicker.idAsignacionRuta} onClick={() => addToCartDirect(seatPicker.idAsignacionRuta, seatPicker.selectedId || undefined)} className="px-4 py-2 rounded-lg bg-primary text-white hover:opacity-90 disabled:opacity-60">Confirmar</button>
+                <button disabled={!seatPicker.selectedIds.length || adding === seatPicker.idAsignacionRuta} onClick={confirmSelectedSeats} className="px-4 py-2 rounded-lg bg-primary text-white hover:opacity-90 disabled:opacity-60">Confirmar ({seatPicker.selectedIds.length || 0})</button>
               </div>
             </div>
           </div>

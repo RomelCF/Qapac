@@ -9,7 +9,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "TipoTarjeta")
+@Table(name = "tipotarjeta")
 public class TipoTarjeta {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -28,6 +28,7 @@ export default function MyTickets() {
   const [open, setOpen] = useState(false)
   const [emailLabel, setEmailLabel] = useState('')
   const [pendingCancel, setPendingCancel] = useState<TicketRow | null>(null)
+  const [refund, setRefund] = useState<{ precio: string; refund: string; percent: number } | null>(null)
   const [fOrigen, setFOrigen] = useState('')
   const [fDestino, setFDestino] = useState('')
   const [fFechaDesde, setFFechaDesde] = useState('')
@@ -53,8 +54,13 @@ export default function MyTickets() {
         // Endpoint esperado: listar pasajes del cliente
         // Ajustar cuando el backend esté listo
         const res = await fetch(`${API_BASE}/pasajes/cliente/${p.idCliente}`)
-        if (!res.ok) { setError('No se pudieron cargar tus pasajes'); return }
+        if (!res.ok) { 
+          console.error('Error al cargar pasajes:', res.status, res.statusText)
+          setError('No se pudieron cargar tus pasajes'); 
+          return 
+        }
         const items = await res.json()
+        console.log('Pasajes recibidos:', items)
         const mapped: TicketRow[] = (items || []).map((it: any) => ({
           id: it.idPasaje ?? it.id ?? 0,
           origen: it.origenProvincia ?? it.origen ?? '-',
@@ -81,6 +87,21 @@ export default function MyTickets() {
     }
     load()
   }, [])
+
+  useEffect(() => {
+    const loadRefund = async () => {
+      if (!pendingCancel) { setRefund(null); return }
+      try {
+        const res = await fetch(`${API_BASE}/pasajes/${pendingCancel.id}/refund`)
+        if (!res.ok) { setRefund(null); return }
+        const info = await res.json()
+        setRefund(info)
+      } catch {
+        setRefund(null)
+      }
+    }
+    loadRefund()
+  }, [pendingCancel])
 
   async function cancelTicket(id: number) {
     try {
@@ -155,6 +176,12 @@ export default function MyTickets() {
                 <div>
                   <p className="text-sm md:text-base">¿Deseas cancelar este pasaje?</p>
                   <p className="text-text-secondary text-sm mt-1">Esta acción marcará el carrito como cancelado.</p>
+                  {refund && (
+                    <p className="text-sm mt-2">
+                      Reembolso estimado: <span className="font-semibold">S/ {Number(refund.refund).toFixed(2)}</span>
+                      {' '}(<span className="font-semibold">{refund.percent}%</span> de S/ {Number(refund.precio).toFixed(2)})
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="mt-4 rounded-lg border border-border-soft bg-white/50 p-3 text-sm">

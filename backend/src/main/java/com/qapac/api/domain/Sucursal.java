@@ -18,10 +18,6 @@ public class Sucursal {
     @Column(name = "id_sucursal")
     private Integer idSucursal;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "id_empresa", nullable = false)
-    private Empresa empresa;
-
     @Column(name = "nombre", length = 150, nullable = false)
     private String nombre;
 
@@ -33,10 +29,4 @@ public class Sucursal {
 
     @Column(name = "direccion", length = 255, nullable = false)
     private String direccion;
-
-    @OneToMany(mappedBy = "sucursalOrigen", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Ruta> rutasOrigen;
-
-    @OneToMany(mappedBy = "sucursalDestino", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Ruta> rutasDestino;
 }

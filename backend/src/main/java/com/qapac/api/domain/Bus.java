@@ -29,7 +29,7 @@ public class Bus {
     @Column(name = "estado")
     private BusEstado estado;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "id_empresa", nullable = false)
     private Empresa empresa;
 

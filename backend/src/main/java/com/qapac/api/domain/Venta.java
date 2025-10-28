@@ -12,7 +12,7 @@ import java.time.LocalTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "Venta")
+@Table(name = "venta")
 public class Venta {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,8 +32,4 @@ public class Venta {
 
     @Column(name = "hora", nullable = false)
     private LocalTime hora;
-
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "id_carrito", nullable = false)
-    private Carrito carrito;
 }
