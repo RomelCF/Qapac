@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import UserAvatar from '../components/UserAvatar'
+import CompanyHeader from '../components/CompanyHeader'
+import { useTheme } from '../hooks/useTheme'
 
 export default function MyAccount() {
+  useTheme()
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
-  const [themeDark, setThemeDark] = useState(false)
+  const [themeDark, setThemeDark] = useState(() => {
+    const saved = localStorage.getItem('theme')
+    return saved === 'dark'
+  })
   const [msg, setMsg] = useState<string | null>(null)
   const [ok, setOk] = useState<boolean | null>(null)
   const fileRef = useRef<HTMLInputElement | null>(null)
@@ -41,14 +47,6 @@ export default function MyAccount() {
   const [userId, setUserId] = useState<string | null>(null)
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme')
-    if (savedTheme === 'dark') {
-      setThemeDark(true)
-      document.documentElement.classList.add('dark')
-    } else {
-      setThemeDark(false)
-      document.documentElement.classList.remove('dark')
-    }
     const e = localStorage.getItem('userEmail') || ''
     setEmailLabel(e)
     setEmail(e)
@@ -138,12 +136,11 @@ export default function MyAccount() {
   function toggleTheme() {
     const next = !themeDark
     setThemeDark(next)
+    localStorage.setItem('theme', next ? 'dark' : 'light')
     if (next) {
       document.documentElement.classList.add('dark')
-      localStorage.setItem('theme', 'dark')
     } else {
       document.documentElement.classList.remove('dark')
-      localStorage.setItem('theme', 'light')
     }
   }
 
@@ -185,50 +182,54 @@ export default function MyAccount() {
 
   return (
     <div className="min-h-screen bg-background-light text-text-primary">
-      <header className="p-4 border-b border-border-soft bg-background-secondary">
-        <div className="max-w-5xl mx-auto flex items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <Link to="/dashboard/cliente" aria-label="Inicio">
-              <img src="/assets/logo.png" alt="Logo" className="h-16 md:h-20 w-auto" />
-            </Link>
-          </div>
-          <nav className="flex items-center gap-4 text-sm">
-            <Link to="/dashboard/cliente/pasajes" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
-              <span className="material-symbols-outlined text-base">confirmation_number</span>
-              Mis pasajes
-            </Link>
-            <Link to="/dashboard/cliente/comprar" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
-              <span className="material-symbols-outlined text-base">shopping_cart</span>
-              Comprar
-            </Link>
-            <Link to="/dashboard/cliente/movimientos" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
-              <span className="material-symbols-outlined text-base">receipt_long</span>
-              Movimientos
-            </Link>
-            <Link to="/dashboard/cliente/tarjetas" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
-              <span className="material-symbols-outlined text-base">credit_card</span>
-              Tarjetas
-            </Link>
-          </nav>
-          <div className="flex items-center gap-3">
-            <Link to="/login" className="text-accent hover:text-primary text-sm">Cerrar sesión</Link>
-            <div className="relative">
-              <button type="button" onClick={() => setOpen(v => !v)} aria-haspopup="menu" aria-expanded={open} className="rounded-full hover:border-primary hover:shadow-md">
-                <UserAvatar size={40} />
-              </button>
-              {open && (
-                <div className="absolute right-0 mt-2 w-56 rounded-lg border border-border-soft bg-white shadow-xl p-3 z-20">
-                  <div className="text-sm text-text-secondary mb-2 truncate" title={emailLabel}>{emailLabel || 'Usuario'}</div>
-                  <div className="flex flex-col gap-1">
-                    <Link to="/micuenta" className="px-3 py-2 rounded-md hover:bg-background-light text-text-primary">Mi cuenta</Link>
-                    <Link to="/login" className="px-3 py-2 rounded-md hover:bg-background-light text-red-600">Cerrar sesión</Link>
+      {tipo === 'empresa' ? (
+        <CompanyHeader />
+      ) : (
+        <header className="p-4 border-b border-border-soft bg-background-secondary">
+          <div className="max-w-5xl mx-auto flex items-center justify-between gap-6">
+            <div className="flex items-center gap-3">
+              <Link to="/dashboard/cliente" aria-label="Inicio">
+                <img src="/assets/logo.png" alt="Logo" className="h-16 md:h-20 w-auto" />
+              </Link>
+            </div>
+            <nav className="flex items-center gap-4 text-sm">
+              <Link to="/dashboard/cliente/pasajes" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
+                <span className="material-symbols-outlined text-base">confirmation_number</span>
+                Mis pasajes
+              </Link>
+              <Link to="/dashboard/cliente/comprar" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
+                <span className="material-symbols-outlined text-base">shopping_cart</span>
+                Comprar
+              </Link>
+              <Link to="/dashboard/cliente/movimientos" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
+                <span className="material-symbols-outlined text-base">receipt_long</span>
+                Movimientos
+              </Link>
+              <Link to="/dashboard/cliente/tarjetas" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
+                <span className="material-symbols-outlined text-base">credit_card</span>
+                Tarjetas
+              </Link>
+            </nav>
+            <div className="flex items-center gap-3">
+              <Link to="/login" className="text-accent hover:text-primary text-sm">Cerrar sesión</Link>
+              <div className="relative">
+                <button type="button" onClick={() => setOpen(v => !v)} aria-haspopup="menu" aria-expanded={open} className="rounded-full hover:border-primary hover:shadow-md">
+                  <UserAvatar size={40} />
+                </button>
+                {open && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-lg border border-border-soft bg-white shadow-xl p-3 z-20">
+                    <div className="text-sm text-text-secondary mb-2 truncate" title={emailLabel}>{emailLabel || 'Usuario'}</div>
+                    <div className="flex flex-col gap-1">
+                      <Link to="/micuenta" className="px-3 py-2 rounded-md hover:bg-background-light text-text-primary">Mi cuenta</Link>
+                      <Link to="/login" className="px-3 py-2 rounded-md hover:bg-background-light text-red-600">Cerrar sesión</Link>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
       <div className="max-w-3xl mx-auto px-4 py-10">
         <h1 className="font-display text-3xl text-primary text-center mb-8">Mi cuenta</h1>
 

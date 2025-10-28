@@ -6,6 +6,7 @@ import com.qapac.api.repository.EmpresaRepository;
 import com.qapac.api.repository.UsuarioRepository;
 import com.qapac.api.web.dto.CreateEmpresaRequest;
 import com.qapac.api.web.dto.UpdateEmpresaRequest;
+import com.qapac.api.web.dto.EmpresaResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,13 +49,17 @@ public class EmpresaController {
     @GetMapping("/by-user/{userId}")
     public ResponseEntity<?> getByUser(@PathVariable Integer userId) {
         var opt = empresaRepository.findByUsuario_IdUsuario(userId);
-        return opt.<ResponseEntity<?>>map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return opt.<ResponseEntity<?>>map(emp -> ResponseEntity.ok(new EmpresaResponse(
+                emp.getIdEmpresa(), emp.getNombre(), emp.getRuc(), emp.getRazonSocial()
+        ))).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/{idEmpresa}")
     public ResponseEntity<?> getById(@PathVariable Integer idEmpresa) {
         Optional<Empresa> opt = empresaRepository.findById(idEmpresa);
-        return opt.<ResponseEntity<?>>map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return opt.<ResponseEntity<?>>map(emp -> ResponseEntity.ok(new EmpresaResponse(
+                emp.getIdEmpresa(), emp.getNombre(), emp.getRuc(), emp.getRazonSocial()
+        ))).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{idEmpresa}")

@@ -58,8 +58,11 @@ export default function Login() {
             const prof = await profRes.json()
             if (prof?.tipo === 'cliente') {
               navigate('/dashboard/cliente')
+            } else if (prof?.tipo === 'empresa') {
+              navigate('/dashboard/empresa')
+            } else if (prof?.tipo === 'admin') {
+              navigate('/dashboard/admin')
             }
-            // si es empresa u otro tipo, por ahora no redirigimos hasta definir su dashboard
           }
         } catch {}
       }

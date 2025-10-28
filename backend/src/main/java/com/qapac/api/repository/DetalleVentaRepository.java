@@ -10,4 +10,7 @@ public interface DetalleVentaRepository extends JpaRepository<DetalleVenta, Inte
     long countByPasaje_AsignacionRuta_IdAsignacionRuta(Integer idAsignacionRuta);
     List<DetalleVenta> findByPasaje_Cliente_IdCliente(Integer idCliente);
     DetalleVenta findFirstByVenta_IdVenta(Integer idVenta);
+    List<DetalleVenta> findByVenta_FechaBetweenAndPasaje_AsignacionRuta_Ruta_Empresa_IdEmpresa(java.time.LocalDate from, java.time.LocalDate to, Integer idEmpresa);
+    List<DetalleVenta> findByVenta_FechaBetween(java.time.LocalDate from, java.time.LocalDate to);
+    List<DetalleVenta> findByVenta_IdVenta(Integer idVenta);
 }

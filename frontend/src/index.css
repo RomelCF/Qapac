@@ -1,4 +1,40 @@
-:root { color-scheme: light dark; }
+:root { 
+  color-scheme: light dark;
+  --bg-light: #f8fafc;
+  --bg-secondary: #eef2f7;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --primary: #f97316;
+  --accent: #ea580c;
+  --border-soft: #cbd5e1;
+}
+
+html.dark {
+  --bg-light: #1e293b;
+  --bg-secondary: #0f172a;
+  --text-primary: #f1f5f9;
+  --text-secondary: #64748b;
+  --primary: #38bdf8;
+  --accent: #4ade80;
+  --border-soft: #334155;
+}
+
+.bg-background-light { background-color: var(--bg-light); }
+.bg-background-secondary { background-color: var(--bg-secondary); }
+.text-text-primary { color: var(--text-primary); }
+.text-text-secondary { color: var(--text-secondary); }
+.text-primary { color: var(--primary); }
+.text-accent { color: var(--accent); }
+.bg-primary { background-color: var(--primary); }
+.bg-accent { background-color: var(--accent); }
+.border-border-soft { border-color: var(--border-soft); }
+.bg-white { background-color: #ffffff; }
+html.dark .bg-white { background-color: #0f172a; }
+.hover\:border-primary:hover { border-color: var(--primary); }
+.hover\:text-primary:hover { color: var(--primary); }
+.hover\:bg-accent:hover { background-color: var(--accent); }
+.hover\:bg-background-light:hover { background-color: var(--bg-light); }
+
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
 body { line-height: 1.5; }

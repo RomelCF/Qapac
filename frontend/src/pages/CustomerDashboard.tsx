@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { useTheme } from '../hooks/useTheme'
 
 export default function CustomerDashboard() {
+  useTheme()
   const [open, setOpen] = useState(false)
   const [email, setEmail] = useState<string>('')
   useEffect(() => {

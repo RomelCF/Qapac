@@ -6,6 +6,7 @@ import com.qapac.api.web.dto.LoginResponse;
 import com.qapac.api.repository.UsuarioRepository;
 import com.qapac.api.repository.ClienteRepository;
 import com.qapac.api.repository.EmpresaRepository;
+import com.qapac.api.repository.AdministradorRepository;
 import com.qapac.api.web.dto.ProfileResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -21,13 +22,16 @@ public class AuthController {
     private final UsuarioRepository usuarioRepository;
     private final ClienteRepository clienteRepository;
     private final EmpresaRepository empresaRepository;
+    private final AdministradorRepository administradorRepository;
 
     public AuthController(UsuarioRepository usuarioRepository,
                           ClienteRepository clienteRepository,
-                          EmpresaRepository empresaRepository) {
+                          EmpresaRepository empresaRepository,
+                          AdministradorRepository administradorRepository) {
         this.usuarioRepository = usuarioRepository;
         this.clienteRepository = clienteRepository;
         this.empresaRepository = empresaRepository;
+        this.administradorRepository = administradorRepository;
     }
 
     @PostMapping("/login")
@@ -49,6 +53,10 @@ public class AuthController {
     public ResponseEntity<ProfileResponse> profile(@RequestParam("userId") Integer userId) {
         if (userId == null) {
             return ResponseEntity.badRequest().build();
+        }
+        // Admin tiene prioridad
+        if (administradorRepository.existsByUsuario_IdUsuario(userId)) {
+            return ResponseEntity.ok(new ProfileResponse("admin", null, null));
         }
         var clienteOpt = clienteRepository.findByUsuario_IdUsuario(userId);
         if (clienteOpt.isPresent()) {
