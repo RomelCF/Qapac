@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import RegisterCompany from './pages/RegisterCompany'
@@ -24,37 +24,45 @@ import MyAccount from './pages/MyAccount'
 import Cart from './pages/Cart'
 import PaymentSelect from './pages/PaymentSelect'
 import PaymentCards from './pages/PaymentCards'
+import ChatButton from './components/ChatButton'
 
 export default function App() {
+  const location = useLocation()
+  const path = location.pathname
+  const isAuthRoute = path === '/login' || path.startsWith('/register')
+
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/register/empresa" element={<RegisterCompany />} />
-      <Route path="/register/cliente" element={<RegisterCustomer />} />
-      <Route path="/register/paso-3" element={<RegisterStep3 />} />
-      <Route path="/dashboard/cliente" element={<CustomerDashboard />} />
-      <Route path="/dashboard/empresa" element={<CompanyDashboard />} />
-      <Route path="/dashboard/empresa/buses" element={<CompanyBuses />} />
-      <Route path="/dashboard/empresa/viajes" element={<CompanyTrips />} />
-      <Route path="/dashboard/empresa/rutas" element={<CompanyRoutes />} />
-      <Route path="/dashboard/empresa/ventas" element={<CompanySales />} />
-      <Route path="/dashboard/empresa/estadisticas" element={<CompanyStats />} />
-      <Route path="/dashboard/admin" element={<AdminDashboard />} />
-      <Route path="/dashboard/admin/usuarios" element={<AdminUsers />} />
-      <Route path="/dashboard/admin/empleados" element={<AdminEmployees />} />
-      <Route path="/dashboard/admin/sucursales" element={<AdminBranches />} />
-      <Route path="/dashboard/admin/estadisticas" element={<AdminStats />} />
-      <Route path="/dashboard/cliente/pasajes" element={<MyTickets />} />
-      <Route path="/dashboard/cliente/comprar" element={<BuyTickets />} />
-      <Route path="/dashboard/cliente/carrito" element={<Cart />} />
-      <Route path="/dashboard/cliente/pago" element={<PaymentSelect />} />
-      <Route path="/dashboard/cliente/pago/tarjetas/:brand" element={<PaymentCards />} />
-      <Route path="/dashboard/cliente/movimientos" element={<MyTransactions />} />
-      <Route path="/dashboard/cliente/tarjetas" element={<MyCards />} />
-      <Route path="/micuenta" element={<MyAccount />} />
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/register/empresa" element={<RegisterCompany />} />
+        <Route path="/register/cliente" element={<RegisterCustomer />} />
+        <Route path="/register/paso-3" element={<RegisterStep3 />} />
+        <Route path="/dashboard/cliente" element={<CustomerDashboard />} />
+        <Route path="/dashboard/empresa" element={<CompanyDashboard />} />
+        <Route path="/dashboard/empresa/buses" element={<CompanyBuses />} />
+        <Route path="/dashboard/empresa/viajes" element={<CompanyTrips />} />
+        <Route path="/dashboard/empresa/rutas" element={<CompanyRoutes />} />
+        <Route path="/dashboard/empresa/ventas" element={<CompanySales />} />
+        <Route path="/dashboard/empresa/estadisticas" element={<CompanyStats />} />
+        <Route path="/dashboard/admin" element={<AdminDashboard />} />
+        <Route path="/dashboard/admin/usuarios" element={<AdminUsers />} />
+        <Route path="/dashboard/admin/empleados" element={<AdminEmployees />} />
+        <Route path="/dashboard/admin/sucursales" element={<AdminBranches />} />
+        <Route path="/dashboard/admin/estadisticas" element={<AdminStats />} />
+        <Route path="/dashboard/cliente/pasajes" element={<MyTickets />} />
+        <Route path="/dashboard/cliente/comprar" element={<BuyTickets />} />
+        <Route path="/dashboard/cliente/carrito" element={<Cart />} />
+        <Route path="/dashboard/cliente/pago" element={<PaymentSelect />} />
+        <Route path="/dashboard/cliente/pago/tarjetas/:brand" element={<PaymentCards />} />
+        <Route path="/dashboard/cliente/movimientos" element={<MyTransactions />} />
+        <Route path="/dashboard/cliente/tarjetas" element={<MyCards />} />
+        <Route path="/micuenta" element={<MyAccount />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+      {!isAuthRoute && <ChatButton />}
+    </>
   )
 }
