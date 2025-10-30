@@ -56,10 +56,17 @@ public class EmpresaController {
 
     @GetMapping("/{idEmpresa}")
     public ResponseEntity<?> getById(@PathVariable Integer idEmpresa) {
-        Optional<Empresa> opt = empresaRepository.findById(idEmpresa);
-        return opt.<ResponseEntity<?>>map(emp -> ResponseEntity.ok(new EmpresaResponse(
-                emp.getIdEmpresa(), emp.getNombre(), emp.getRuc(), emp.getRazonSocial()
-        ))).orElseGet(() -> ResponseEntity.notFound().build());
+        try {
+            Optional<Empresa> opt = empresaRepository.findById(idEmpresa);
+            if (opt.isEmpty()) return ResponseEntity.notFound().build();
+            Empresa emp = opt.get();
+            String nombre = emp.getNombre()!=null? emp.getNombre(): "";
+            String ruc = emp.getRuc()!=null? emp.getRuc(): "";
+            String razon = emp.getRazonSocial()!=null? emp.getRazonSocial(): "";
+            return ResponseEntity.ok(new EmpresaResponse(emp.getIdEmpresa(), nombre, ruc, razon));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al obtener empresa");
+        }
     }
 
     @PutMapping("/{idEmpresa}")

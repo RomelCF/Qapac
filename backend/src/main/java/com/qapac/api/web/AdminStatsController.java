@@ -40,9 +40,12 @@ public class AdminStatsController {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         long tickets = detalles.size();
         int empresasActivas = (int)empresaRepository.count();
-        int busesActivos = (int)busRepository.countByEmpresa_IdEmpresa(null); // placeholder, count all buses
-        // count all buses: fallback
-        try { busesActivos = (int)busRepository.count(); } catch (Exception ignored) {}
+        int busesActivos;
+        try {
+            busesActivos = (int)busRepository.count();
+        } catch (Exception ignored) {
+            busesActivos = 0;
+        }
         return ResponseEntity.ok(new KpisResponse(ingresos, tickets, empresasActivas, busesActivos));
     }
 
@@ -106,8 +109,8 @@ public class AdminStatsController {
                     .map(Carrito::getAsignacionRuta)
                     .map(AsignacionRuta::getRuta)
                     .map(r -> {
-                        String ori = r.getSucursalOrigen()!=null? r.getSucursalOrigen().getProvincia() : "";
-                        String des = r.getSucursalDestino()!=null? r.getSucursalDestino().getProvincia() : "";
+                        String ori = (r.getSucursalOrigen()!=null && r.getSucursalOrigen().getProvincia()!=null) ? r.getSucursalOrigen().getProvincia() : "";
+                        String des = (r.getSucursalDestino()!=null && r.getSucursalDestino().getProvincia()!=null) ? r.getSucursalDestino().getProvincia() : "";
                         return (ori + " - " + des).trim();
                     })
                     .orElse("Ruta desconocida");

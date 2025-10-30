@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useTheme } from '../hooks/useTheme'
+import UserAvatar from '../components/UserAvatar'
 
 export default function AdminDashboard() {
   useTheme()
@@ -24,6 +25,10 @@ export default function AdminDashboard() {
               <span className="material-symbols-outlined text-base">group</span>
               Usuarios
             </Link>
+            <Link to="/dashboard/admin/empleados" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
+              <span className="material-symbols-outlined text-base">badge</span>
+              Empleados
+            </Link>
             <Link to="/dashboard/admin/sucursales" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
               <span className="material-symbols-outlined text-base">apartment</span>
               Sucursales
@@ -36,7 +41,7 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-3">
             <div className="relative">
               <button type="button" onClick={() => setOpen(v => !v)} aria-haspopup="menu" aria-expanded={open} className="h-10 w-10 rounded-full border border-border-soft bg-white/50 flex items-center justify-center hover:border-primary hover:shadow-md">
-                <span className="material-symbols-outlined">admin_panel_settings</span>
+                <UserAvatar size={40} />
               </button>
               {open && (
                 <div className="absolute right-0 mt-2 w-56 rounded-lg border border-border-soft bg-white shadow-xl p-3 z-20">
@@ -67,6 +72,18 @@ export default function AdminDashboard() {
               <div className="flex flex-col gap-1">
                 <h2 className="text-xl font-bold leading-tight">Usuarios</h2>
                 <p className="text-text-secondary text-sm">Gestiona cuentas y roles.</p>
+              </div>
+            </Link>
+
+            <Link to="/dashboard/admin/empleados" className="flex flex-col items-center justify-center gap-4 rounded-xl border border-border-soft bg-white/50 p-8 text-center transition-all duration-300 hover:shadow-xl hover:border-primary/50">
+              <div className="text-primary">
+                <span className="material-symbols-outlined" style={{ fontSize: 64 }} aria-hidden>
+                  badge
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <h2 className="text-xl font-bold leading-tight">Empleados</h2>
+                <p className="text-text-secondary text-sm">Administra empleados del sistema.</p>
               </div>
             </Link>
 

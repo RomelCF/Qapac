@@ -38,4 +38,7 @@ public class Empleado {
 
     @Column(name = "fecha_nacimiento", nullable = false)
     private LocalDate fechaNacimiento;
+
+    @Column(name = "disponible", columnDefinition = "BOOLEAN DEFAULT true")
+    private Boolean disponible;
 }

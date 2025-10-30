@@ -19,6 +19,7 @@ export default function CompanyBuses() {
   const [capacidad, setCapacidad] = useState<number | ''>('')
   const [estado, setEstado] = useState('disponible')
   const [saving, setSaving] = useState(false)
+  const [asientos, setAsientos] = useState<Array<{codigo:string}>>([])
   const API_BASE = (import.meta as unknown as { env: Record<string, string> }).env?.VITE_API_BASE_URL || 'http://localhost:8080'
 
   useEffect(() => {
@@ -75,14 +76,27 @@ export default function CompanyBuses() {
     setMatricula('')
     setCapacidad('')
     setEstado('disponible')
+    setAsientos([]) // Reset asientos for new bus
     setShowForm(true)
   }
 
-  function onEdit(it: { idBus:number; matricula:string; capacidad:number; estado:string }) {
+  async function onEdit(it: { idBus:number; matricula:string; capacidad:number; estado:string }) {
     setEditing(it)
     setMatricula(it.matricula)
     setCapacidad(it.capacidad)
     setEstado(it.estado)
+    // Obtener asientos del backend
+    try {
+      const res = await fetch(`${API_BASE}/buses/${it.idBus}/asientos`);
+      if (res.ok) {
+        const lista = await res.json();
+        setAsientos(Array.isArray(lista) ? lista.map(a => ({ codigo: a.codigo })) : []);
+      } else {
+        setAsientos([]);
+      }
+    } catch {
+      setAsientos([]);
+    }
     setShowForm(true)
   }
 
@@ -97,15 +111,34 @@ export default function CompanyBuses() {
     }
   }
 
+  function onAddAsiento() {
+    if (asientos.length >= (capacidad || 0)) {
+      alert('No puedes agregar más asientos que la capacidad del bus');
+      return;
+    }
+    setAsientos(a => [...a, {codigo: ''}]);
+  }
+  function onAsientoChange(idx: number, val: string) {
+    setAsientos(a => a.map((el,i)=> i===idx ? {...el, codigo: val} : el))
+  }
+  function onRemoveAsiento(idx: number) {
+    setAsientos(a => a.filter((_,i)=>i!==idx))
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!empresaId) return
     if (!matricula || !capacidad || capacidad <= 0) { alert('Complete matrícula y capacidad válida'); return }
+    if (!editing && asientos.length === 0) { alert('Agrega al menos un asiento'); return }
+    if (!editing && asientos.some(a => !a.codigo)) { alert('Completa todos los códigos de los asientos'); return }
     setSaving(true)
     try {
-      const body = editing
-        ? { matricula, capacidad: Number(capacidad), estado }
-        : { matricula, capacidad: Number(capacidad), estado, idEmpresa: empresaId }
+      let body
+      if (editing) {
+        body = { matricula, capacidad: Number(capacidad), estado };
+      } else {
+        body = { matricula, capacidad: Number(capacidad), estado, idEmpresa: empresaId, asientos };
+      }
       const method = editing ? 'PUT' : 'POST'
       const url = editing ? `${API_BASE}/buses/${editing.idBus}` : `${API_BASE}/buses`
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -119,6 +152,27 @@ export default function CompanyBuses() {
     }
   }
  
+  // Generador de códigos para asientos "A1", "A2", ... "B1", "B2", etc
+  function generarAsientosAutomaticos(total: number) {
+    const as: Array<{codigo:string}> = [];
+    let letraIdx = 0;
+    let numero = 1;
+    for (let i=0; i<total; ++i) {
+      if (numero > 10) { letraIdx++; numero = 1; }
+      const code = String.fromCharCode(65+letraIdx) + numero; // 65 = A
+      as.push({codigo: code});
+      numero++;
+    }
+    setAsientos(as);
+  }
+  // Cortar asientos extra si se cambia la capacidad a menor que la cantidad actual
+  useEffect(() => {
+    if (asientos.length > (capacidad || 0)) {
+      setAsientos(asientos.slice(0, capacidad || 0));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [capacidad]);
+
   return (
     <div className="min-h-screen bg-background-light text-text-primary">
       <CompanyHeader />
@@ -182,15 +236,16 @@ export default function CompanyBuses() {
         )}
 
         {showForm && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-            <div className="w-full max-w-md rounded-xl border border-border-soft bg-white p-6 shadow-2xl">
-              <div className="flex items-center justify-between mb-4">
+          <div className="fixed inset-0 z-50 flex">
+            <div className="bg-black/40 flex-1" onClick={()=>setShowForm(false)}></div>
+            <div className="w-full max-w-md h-full bg-white border-l border-border-soft shadow-2xl flex flex-col animate-slideInRight overflow-y-auto">
+              <div className="flex items-center justify-between p-6 border-b border-border-soft">
                 <h2 className="font-display text-xl">{editing ? 'Editar bus' : 'Nuevo bus'}</h2>
                 <button onClick={()=>setShowForm(false)} className="text-text-secondary hover:text-primary">
                   <span className="material-symbols-outlined">close</span>
                 </button>
               </div>
-              <form onSubmit={onSubmit} className="grid gap-4">
+              <form onSubmit={onSubmit} className="grid gap-4 p-6 flex-1">
                 <div>
                   <label className="sr-only" htmlFor="mat">Matrícula</label>
                   <input id="mat" value={matricula} onChange={e=>setMatricula(e.target.value)} placeholder="Matrícula" className="w-full rounded-lg border border-border-soft bg-white/70 px-4 py-2 outline-none focus:border-primary" />
@@ -198,6 +253,11 @@ export default function CompanyBuses() {
                 <div>
                   <label className="sr-only" htmlFor="cap">Capacidad</label>
                   <input id="cap" type="number" min={1} value={capacidad} onChange={e=>setCapacidad(e.target.value === '' ? '' : Number(e.target.value))} placeholder="Capacidad" className="w-full rounded-lg border border-border-soft bg-white/70 px-4 py-2 outline-none focus:border-primary" />
+                  {!editing && capacidad > 0 && (
+                    <button type="button" onClick={()=>generarAsientosAutomaticos(Number(capacidad))} className="mt-2 px-3 py-1 rounded bg-amber-500 text-white hover:bg-amber-700">
+                      Generar asientos automáticamente
+                    </button>
+                  )}
                 </div>
                 <div>
                   <label className="sr-only" htmlFor="est">Estado</label>
@@ -207,6 +267,21 @@ export default function CompanyBuses() {
                     <option value="mantenimiento">Mantenimiento</option>
                     <option value="inactivo">Inactivo</option>
                   </select>
+                </div>
+                <div className="border-t pt-4 mt-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-lg">Asientos</h3>
+                    <button type="button" onClick={onAddAsiento} className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded flex items-center gap-1" disabled={asientos.length >= (capacidad || 0)}><span className="material-symbols-outlined text-base">add</span>Agregar asiento</button>
+                  </div>
+                  <div className="space-y-2">
+                    {asientos.length === 0 && <div className="text-sm text-text-secondary">Sin asientos agregados</div>}
+                    {asientos.map((as, idx) => (
+                      <div className="flex gap-2 items-center" key={idx}>
+                        <input type="text" value={as.codigo} onChange={e=>onAsientoChange(idx, e.target.value)} placeholder={`Código asiento #${idx+1}`} className="w-40 rounded-lg border border-border-soft bg-white/70 px-3 py-2 outline-none focus:border-primary" />
+                        <button type="button" onClick={()=>onRemoveAsiento(idx)} className="p-1 text-red-600 hover:bg-red-50 rounded"><span className="material-symbols-outlined text-base">delete</span></button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <div className="flex items-center justify-end gap-2 mt-2">
                   <button type="button" onClick={()=>setShowForm(false)} className="px-4 py-2 rounded-lg border border-border-soft hover:border-primary">Cancelar</button>

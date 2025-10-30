@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useTheme } from '../hooks/useTheme'
+import UserAvatar from '../components/UserAvatar'
 
 export default function CustomerDashboard() {
   useTheme()
@@ -43,7 +44,7 @@ export default function CustomerDashboard() {
             </Link>
             <div className="relative">
               <button type="button" onClick={() => setOpen(v => !v)} aria-haspopup="menu" aria-expanded={open} className="h-10 w-10 rounded-full border border-border-soft bg-white/50 flex items-center justify-center hover:border-primary hover:shadow-md">
-                <span className="material-symbols-outlined">person</span>
+                <UserAvatar size={40} />
               </button>
               {open && (
                 <div className="absolute right-0 mt-2 w-56 rounded-lg border border-border-soft bg-white shadow-xl p-3 z-20">

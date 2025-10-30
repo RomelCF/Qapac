@@ -13,6 +13,7 @@ import CompanyRoutes from './pages/CompanyRoutes'
 import CompanySales from './pages/CompanySales'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminUsers from './pages/AdminUsers'
+import AdminEmployees from './pages/AdminEmployees'
 import AdminBranches from './pages/AdminBranches'
 import AdminStats from './pages/AdminStats'
 import MyTickets from './pages/MyTickets'
@@ -41,6 +42,7 @@ export default function App() {
       <Route path="/dashboard/empresa/estadisticas" element={<CompanyStats />} />
       <Route path="/dashboard/admin" element={<AdminDashboard />} />
       <Route path="/dashboard/admin/usuarios" element={<AdminUsers />} />
+      <Route path="/dashboard/admin/empleados" element={<AdminEmployees />} />
       <Route path="/dashboard/admin/sucursales" element={<AdminBranches />} />
       <Route path="/dashboard/admin/estadisticas" element={<AdminStats />} />
       <Route path="/dashboard/cliente/pasajes" element={<MyTickets />} />

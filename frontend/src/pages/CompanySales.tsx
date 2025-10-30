@@ -30,7 +30,7 @@ export default function CompanySales() {
     try { const res = await fetch(`${API_BASE}/auth/profile?userId=${uid}`); if (res.ok){ const p=await res.json(); if (p?.idEmpresa) setEmpresaId(Number(p.idEmpresa)) } } catch {}
   })() }, [])
 
-  useEffect(() => { if (empresaId){ void Promise.all([loadEmpresa(), loadSales()]) } }, [empresaId, range, month])
+  useEffect(() => { if (empresaId){ setError(null); void Promise.all([loadEmpresa(), loadSales()]) } }, [empresaId, range, month])
 
   async function loadEmpresa(){
     try {
@@ -40,6 +40,14 @@ export default function CompanySales() {
   }
 
   function computeFromTo(): { from: string; to: string } {
+    if (month) {
+      // Si está seleccionado un mes, usamos ese
+      const [y, m] = month.split('-').map(Number)
+      const from = `${y}-${m.toString().padStart(2, '0')}-01`
+      // Obtener último día del mes
+      const to = new Date(y, m, 0)
+      return { from, to: to.toISOString().slice(0, 10) }
+    }
     const days = range==='7d'?7: range==='30d'?30:90
     const end = new Date(); const start = new Date(); start.setDate(end.getDate()-(days-1))
     return { from: start.toISOString().slice(0,10), to: end.toISOString().slice(0,10) }
@@ -146,7 +154,7 @@ export default function CompanySales() {
               <option value="30d">30 días</option>
               <option value="90d">90 días</option>
             </select>
-            <input type="month" value={month} onChange={e=>setMonth(e.target.value)} className="rounded-lg border border-border-soft bg-white/70 px-3 py-2 outline-none focus:border-primary" />
+            <input type="month" value={month} onChange={e=>{ setMonth(e.target.value); setError(null); }} className="rounded-lg border border-border-soft bg-white/70 px-3 py-2 outline-none focus:border-primary" />
             <button onClick={printReport} className="px-4 py-2 rounded-lg bg-primary text-background-light font-bold hover:bg-accent inline-flex items-center gap-2">
               <span className="material-symbols-outlined">print</span>
               Imprimir reporte

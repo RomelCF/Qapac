@@ -40,14 +40,13 @@ public class StatsController {
                 .findByVenta_FechaBetweenAndPasaje_AsignacionRuta_Ruta_Empresa_IdEmpresa(dr.from, dr.to, empresaId);
 
         BigDecimal ingresos = detalles.stream()
-                .map(d -> d.getPasaje())
+                .map(DetalleVenta::getPasaje)
                 .filter(Objects::nonNull)
                 .map(Carrito::getAsignacionRuta)
                 .filter(Objects::nonNull)
                 .map(AsignacionRuta::getRuta)
                 .filter(Objects::nonNull)
-                .map(Ruta::getPrecio)
-                .filter(Objects::nonNull)
+                .map(r->r.getPrecio()!=null?r.getPrecio():BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         long tickets = detalles.size();
@@ -96,7 +95,7 @@ public class StatsController {
             BigDecimal precio = Optional.ofNullable(d.getPasaje())
                     .map(Carrito::getAsignacionRuta)
                     .map(AsignacionRuta::getRuta)
-                    .map(Ruta::getPrecio)
+                    .map(r->r.getPrecio()!=null?r.getPrecio():BigDecimal.ZERO)
                     .orElse(BigDecimal.ZERO);
             byDate.merge(v.getFecha(), precio, BigDecimal::add);
         }
@@ -133,8 +132,8 @@ public class StatsController {
             long vendidos = detalleVentaRepository.countByPasaje_AsignacionRuta_IdAsignacionRuta(v.getIdAsignacionRuta());
             int pct = (int)Math.round((vendidos * 100.0) / total);
             Ruta r = v.getRuta();
-            String label = r != null && r.getSucursalOrigen()!=null && r.getSucursalDestino()!=null ?
-                    (r.getSucursalOrigen().getProvincia() + " - " + r.getSucursalDestino().getProvincia()) : "Ruta " + v.getIdAsignacionRuta();
+            String label = r!=null && r.getSucursalOrigen()!=null && r.getSucursalOrigen().getProvincia()!=null && r.getSucursalDestino()!=null && r.getSucursalDestino().getProvincia()!=null
+                    ? (r.getSucursalOrigen().getProvincia() + " - " + r.getSucursalDestino().getProvincia()) : "Ruta " + v.getIdAsignacionRuta();
             byRoute.computeIfAbsent(label, k -> new ArrayList<>()).add(pct);
         }
         List<OccupancyItem> items = byRoute.entrySet().stream()

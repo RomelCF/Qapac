@@ -34,7 +34,24 @@ html.dark .bg-white { background-color: #0f172a; }
 .hover\:text-primary:hover { color: var(--primary); }
 .hover\:bg-accent:hover { background-color: var(--accent); }
 .hover\:bg-background-light:hover { background-color: var(--bg-light); }
+.animate-slideInRight { animation: slideinright 0.3s cubic-bezier(0.4,0,0.2,1) both; }
+@keyframes slideinright { from{transform:translateX(100%);} to{transform:translateX(0);} }
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
 body { line-height: 1.5; }
+
+/* Utilidades de opacidad para fondos personalizados */
+.bg-white\/70 { background-color: rgba(255, 255, 255, 0.7); }
+html.dark .bg-white\/70 { background-color: rgba(15, 23, 42, 0.7); }
+
+.bg-background-secondary\/60 { background-color: rgba(238, 242, 247, 0.6); }
+html.dark .bg-background-secondary\/60 { background-color: rgba(15, 23, 42, 0.6); }
+
+/* Mejoras de contraste en controles */
+select, input[type="month"], input[type="number"], input[type="text"], input[type="email"], input[type="password"] {
+  color: var(--text-primary);
+}
+html.dark select, html.dark input[type="month"], html.dark input[type="number"], html.dark input[type="text"], html.dark input[type="email"], html.dark input[type="password"] {
+  color: var(--text-primary);
+}

@@ -20,7 +20,7 @@ export default function MyAccount() {
   const [open, setOpen] = useState(false)
   const [emailLabel, setEmailLabel] = useState('')
 
-  const [tipo, setTipo] = useState<'cliente' | 'empresa' | 'none'>('none')
+  const [tipo, setTipo] = useState<'cliente' | 'empresa' | 'admin' | 'none'>('none')
   const [idCliente, setIdCliente] = useState<number | null>(null)
   const [idEmpresa, setIdEmpresa] = useState<number | null>(null)
   const [loadingProfile, setLoadingProfile] = useState(false)
@@ -86,6 +86,8 @@ export default function MyAccount() {
             } else {
               setLoadError('No se pudo cargar los datos de la empresa')
             }
+          } else if (p?.tipo === 'admin') {
+            setTipo('admin')
           }
         } else {
           setLoadError('No se pudo cargar el perfil del usuario')
@@ -184,6 +186,46 @@ export default function MyAccount() {
     <div className="min-h-screen bg-background-light text-text-primary">
       {tipo === 'empresa' ? (
         <CompanyHeader />
+      ) : tipo === 'admin' ? (
+        <header className="p-4 border-b border-border-soft bg-background-secondary">
+          <div className="max-w-5xl mx-auto flex items-center justify-between gap-6">
+            <div className="flex items-center gap-3">
+              <Link to="/dashboard/admin" aria-label="Inicio">
+                <img src="/assets/logo.png" alt="Logo" className="h-16 md:h-20 w-auto" />
+              </Link>
+            </div>
+            <nav className="flex items-center gap-4 text-sm">
+              <Link to="/dashboard/admin/usuarios" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
+                <span className="material-symbols-outlined text-base">group</span> Usuarios
+              </Link>
+              <Link to="/dashboard/admin/empleados" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
+                <span className="material-symbols-outlined text-base">badge</span> Empleados
+              </Link>
+              <Link to="/dashboard/admin/sucursales" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
+                <span className="material-symbols-outlined text-base">apartment</span> Sucursales
+              </Link>
+              <Link to="/dashboard/admin/estadisticas" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
+                <span className="material-symbols-outlined text-base">monitoring</span> Estadísticas
+              </Link>
+            </nav>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <button type="button" onClick={() => setOpen(v => !v)} aria-haspopup="menu" aria-expanded={open} className="h-10 w-10 rounded-full border border-border-soft bg-white/50 flex items-center justify-center hover:border-primary hover:shadow-md">
+                  <UserAvatar size={40} />
+                </button>
+                {open && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-lg border border-border-soft bg-white shadow-xl p-3 z-20">
+                    <div className="text-sm text-text-secondary mb-2 truncate" title={emailLabel}>{emailLabel || 'Administrador'}</div>
+                    <div className="flex flex-col gap-1">
+                      <Link to="/micuenta" className="px-3 py-2 rounded-md hover:bg-background-light text-text-primary">Mi cuenta</Link>
+                      <Link to="/login" className="px-3 py-2 rounded-md hover:bg-background-light text-red-600">Cerrar sesión</Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </header>
       ) : (
         <header className="p-4 border-b border-border-soft bg-background-secondary">
           <div className="max-w-5xl mx-auto flex items-center justify-between gap-6">
@@ -198,8 +240,8 @@ export default function MyAccount() {
                 Mis pasajes
               </Link>
               <Link to="/dashboard/cliente/comprar" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
-                <span className="material-symbols-outlined text-base">shopping_cart</span>
-                Comprar
+                <span className="material-symbols-outlined text-base">directions_bus</span>
+                Catalogo
               </Link>
               <Link to="/dashboard/cliente/movimientos" className="text-text-secondary hover:text-primary inline-flex items-center gap-1">
                 <span className="material-symbols-outlined text-base">receipt_long</span>
@@ -211,7 +253,9 @@ export default function MyAccount() {
               </Link>
             </nav>
             <div className="flex items-center gap-3">
-              <Link to="/login" className="text-accent hover:text-primary text-sm">Cerrar sesión</Link>
+              <Link to="/dashboard/cliente/carrito" className="h-10 w-10 rounded-full border border-border-soft bg-white/50 flex items-center justify-center hover:border-primary hover:shadow-md" aria-label="Carrito">
+                <span className="material-symbols-outlined">shopping_cart</span>
+              </Link>
               <div className="relative">
                 <button type="button" onClick={() => setOpen(v => !v)} aria-haspopup="menu" aria-expanded={open} className="rounded-full hover:border-primary hover:shadow-md">
                   <UserAvatar size={40} />
