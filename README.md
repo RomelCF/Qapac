@@ -20,7 +20,7 @@ El nombre *QhapaqÑan* —que significa *Gran Camino Inca*— simboliza la conex
 ### Frontend  
 - **React + Vite:** para un desarrollo ágil y una interfaz moderna.  
 - **TypeScript:** mejora la mantenibilidad y la detección temprana de errores.  
-- **HTML5, CSS3 y JavaScript (ES6+):** base del diseño e interacción.  
+- **HTML5, CSS3 y JavaScript:** base del diseño e interacción.  
 - **Axios:** para la comunicación con el backend mediante API REST.  
 
 ### Backend  
@@ -48,9 +48,87 @@ Distribución de lenguajes según GitHub:
 
 ---
 
-## Objetivos del Proyecto  
-- Digitalizar la compra de pasajes interprovinciales de forma eficiente.  
-- Proporcionar una interfaz intuitiva y accesible para los usuarios.  
-- Garantizar la correcta gestión de datos y operaciones de venta.  
-- Aplicar buenas prácticas de desarrollo y arquitectura de software.  
+## Ejecución del Proyecto
+
+### 1. Base de Datos (MySQL con XAMPP)
+
+1. Abre **XAMPP Control Panel**.  
+2. Inicia los módulos **Apache** y **MySQL**.  
+3. En tu navegador, abre:  
+   [http://localhost/phpmyadmin](http://localhost/phpmyadmin)  
+4. Crea una base de datos llamada `qhapaqnan`.  
+5. Importa los archivos SQL del proyecto ubicados en la carpeta `/database`:
+   - **Primero**: Importa `Qapac.sql` (estructura de la base de datos).
+   - **Segundo**: Importa `Qapac_Inserts.sql` (datos iniciales).
+
+---
+
+### 2. Frontend (React + Vite)
+
+1. Abre una nueva terminal en la carpeta del **frontend**:
+```bash
+   cd QhapaqNan/frontend
+```
+
+2. Instala las dependencias:
+```bash
+   npm install
+```
+
+3. Inicia el servidor de desarrollo:
+```bash
+   npm run dev
+```
+
+4. Abre tu navegador y accede a la URL que muestra la consola (por defecto):  
+   [http://localhost:5173](http://localhost:5173)
+
+---
+
+### 3. Backend (Spring Boot)
+
+1. Abre otra terminal en la carpeta del **backend**:
+```bash
+   cd QhapaqNan/backend
+```
+
+2. Asegúrate de que la base de datos `qhapaqnan` esté activa en XAMPP.
+
+3. Configura el archivo `src/main/resources/application.properties` con tus credenciales locales:
+```properties
+   spring.datasource.url=jdbc:mysql://localhost:3306/qhapaqnan
+   spring.datasource.username=root
+   spring.datasource.password=
+   spring.jpa.hibernate.ddl-auto=update
+   spring.jpa.show-sql=true
+```
+
+4. Ejecuta el backend con:
+```bash
+   mvn spring-boot:run
+```
+
+5. El backend estará disponible en:  
+   [http://localhost:8080](http://localhost:8080)
+
+---
+
+## Objetivos del Proyecto
+
+- Digitalizar el proceso de compra de pasajes interprovinciales.
+- Brindar una experiencia de usuario moderna e intuitiva.
+- Aplicar principios de ingeniería de software y arquitectura limpia.
+- Integrar backend robusto con frontend dinámico y eficiente.
+
+---
+
+## Estructura del Proyecto
+```
+Qapac/
+├── frontend/          # Aplicación React + Vite
+├── backend/           # API REST con Spring Boot
+└── database/          # Scripts SQL
+    ├── Qapac.sql      # Estructura de la base de datos
+    └── Qapac_Inserts.sql  # Datos iniciales
+```
 
