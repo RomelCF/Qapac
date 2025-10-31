@@ -143,10 +143,10 @@ CREATE TABLE Brevete (
     CHECK (fecha_vencimiento > fecha_emision)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla Chofer
+-- Tabla Chofer (id_brevete ahora es NULL)
 CREATE TABLE Chofer (
     id_chofer INT AUTO_INCREMENT PRIMARY KEY,
-    id_brevete INT NOT NULL,
+    id_brevete INT NULL,
     id_empleado INT NOT NULL,
     FOREIGN KEY (id_brevete) REFERENCES Brevete(id_brevete) ON DELETE RESTRICT,
     FOREIGN KEY (id_empleado) REFERENCES Empleado(id_empleado) ON DELETE CASCADE,
@@ -220,13 +220,14 @@ CREATE TABLE Tarjeta (
     INDEX idx_tipo_tarjeta (id_tipo_tarjeta)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla Pasaje
+-- Tabla Pasaje (con fecha_creacion agregada)
 CREATE TABLE Pasaje (
     id_pasaje INT AUTO_INCREMENT PRIMARY KEY,
     id_cliente INT NOT NULL,
     id_viaje INT NOT NULL,
     id_asiento INT NOT NULL,
     estado ENUM('pendiente', 'completado', 'pagado', 'cancelado') DEFAULT 'pendiente',
+    fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (id_cliente) REFERENCES Cliente(id_cliente) ON DELETE CASCADE,
     FOREIGN KEY (id_viaje) REFERENCES Viaje(id_viaje) ON DELETE CASCADE,
     FOREIGN KEY (id_asiento) REFERENCES Asiento(id_asiento) ON DELETE CASCADE,
