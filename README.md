@@ -1,4 +1,4 @@
-# QhapaqÑan 🚌
+# QhapaqÑan 
 
 **Autor:** Romel Rodrigo Chumpitaz Flores  
 **Código:** 20231014A  
@@ -7,7 +7,7 @@
 
 ---
 
-## 📘 Descripción del Proyecto  
+## Descripción del Proyecto  
 **QhapaqÑan** es una aplicación web desarrollada como parte del curso **Construcción de Software**, enfocada en la **venta de pasajes de bus interprovinciales**.  
 El sistema busca digitalizar el proceso de compra de pasajes, brindando a los usuarios una experiencia rápida, ordenada y segura para planificar sus viajes.  
 
@@ -15,7 +15,7 @@ El nombre *QhapaqÑan* —que significa *Gran Camino Inca*— simboliza la conex
 
 ---
 
-## ⚙️ Tecnologías Utilizadas  
+## Tecnologías Utilizadas  
 
 ### Frontend  
 - **React + Vite:** para un desarrollo ágil y una interfaz moderna.  
@@ -29,7 +29,7 @@ El nombre *QhapaqÑan* —que significa *Gran Camino Inca*— simboliza la conex
 
 ---
 
-## 🧩 Funcionalidades Implementadas  
+## Funcionalidades Implementadas  
 
 - **Registro de usuarios y empresas de transporte.**  
   Permite crear cuentas tanto para pasajeros como para las empresas que ofrecen servicios de transporte.  
@@ -48,7 +48,7 @@ El nombre *QhapaqÑan* —que significa *Gran Camino Inca*— simboliza la conex
 
 ---
 
-## 🎯 Objetivos del Proyecto  
+## Objetivos del Proyecto  
 - Digitalizar la compra de pasajes interprovinciales de forma eficiente.  
 - Proporcionar una interfaz intuitiva y accesible para los usuarios.  
 - Garantizar la correcta gestión de datos y operaciones de venta.  
