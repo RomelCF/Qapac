@@ -54,9 +54,3 @@ El nombre *QhapaqÑan* —que significa *Gran Camino Inca*— simboliza la conex
 - Garantizar la correcta gestión de datos y operaciones de venta.  
 - Aplicar buenas prácticas de desarrollo y arquitectura de software.  
 
----
-
-## 💡 Conclusión  
-**QhapaqÑan** combina un **frontend moderno** con un **backend robusto** para ofrecer una solución académica práctica y escalable.  
-El proyecto refleja la aplicación de conceptos de ingeniería de software en un entorno real, aportando una experiencia funcional y útil tanto para usuarios como para empresas de transporte.
-
