@@ -19,8 +19,9 @@ El nombre *QhapaqÑan* —que significa *Gran Camino Inca*— simboliza la conex
 
 ### Frontend  
 - **React + Vite:** para un desarrollo ágil y una interfaz moderna.  
-- **HTML5, CSS3 y JavaScript (ES6+):** base del diseño y comportamiento de la aplicación.  
-- **Axios:** para la comunicación con el backend mediante peticiones HTTP.  
+- **TypeScript:** mejora la mantenibilidad y la detección temprana de errores.  
+- **HTML5, CSS3 y JavaScript (ES6+):** base del diseño e interacción.  
+- **Axios:** para la comunicación con el backend mediante API REST.  
 
 ### Backend  
 - **Java (Spring Boot):** encargado de la lógica de negocio y los servicios REST.  
@@ -32,19 +33,18 @@ El nombre *QhapaqÑan* —que significa *Gran Camino Inca*— simboliza la conex
 ## Funcionalidades Implementadas  
 
 - **Registro de usuarios y empresas de transporte.**  
-  Permite crear cuentas tanto para pasajeros como para las empresas que ofrecen servicios de transporte.  
-
 - **Búsqueda de rutas (origen – destino – fecha).**  
-  Los usuarios pueden consultar las rutas disponibles según su punto de partida, destino y fecha de viaje.  
-
 - **Selección de asiento y compra (simulada).**  
-  El sistema muestra la disponibilidad de asientos y permite realizar una compra simulada para efectos de demostración.  
-
 - **Generación de comprobante electrónico.**  
-  Al finalizar la compra, se emite un comprobante digital con los datos del viaje y del usuario.  
-
 - **Panel de control para ventas y reportes.**  
-  Las empresas de transporte disponen de un panel donde pueden visualizar las ventas realizadas y generar reportes de actividad.  
+
+---
+
+## Estadísticas del Proyecto  
+Distribución de lenguajes según GitHub:  
+- **TypeScript:** 68.6%  
+- **Java:** 30.6%  
+- **Otros:** 0.8%  
 
 ---
 
