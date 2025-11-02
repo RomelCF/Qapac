@@ -18,6 +18,8 @@ public class CarritoListItem {
     private String destinoProvincia;
     private String fecha;
     private String hora;
+    private String llegadaFecha;
+    private String llegadaHora;
     private String empresaNombre;
     private String empresaNumero;
     private String busMatricula;

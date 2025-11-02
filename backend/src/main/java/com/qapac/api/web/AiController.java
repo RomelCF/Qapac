@@ -20,7 +20,7 @@ public class AiController {
     @Value("${gemini.model:${GEMINI_MODEL:models/gemini-pro}}")
     private String geminiModel;
 
-    public static record ChatRequest(String message) {}
+    public static record ChatRequest(String message, String role) {}
     public static record ChatResponse(String reply) {}
 
     private String buildGeminiUrl() {
@@ -37,31 +37,61 @@ public class AiController {
             return ResponseEntity.status(500).body("Falta configurar gemini.api.key o GEMINI_API_KEY");
         }
         try {
-            String systemContext = String.join("\n",
+            String roleIn = req.role() == null ? "none" : req.role().trim().toLowerCase();
+
+            String commonIntro = String.join("\n",
                 "Eres un asistente de soporte para la aplicación Qapac.",
                 "Responde SOLO sobre funcionalidades, pantallas, flujos y uso de Qapac (no temas generales).",
-                "Si te preguntan algo fuera del alcance de Qapac, responde brevemente que solo puedes ayudar con el sistema.",
-                "Guía práctica (responde con pasos concretos y breves):",
+                "Responde con pasos concretos y breves, usando los nombres de botones y secciones tal como aparecen en la app."
+            );
+
+            String clienteSection = String.join("\n",
                 "- Cliente:",
                 "  · Dashboard: acceso a Mis pasajes, Catálogo (comprar), Movimientos, Tarjetas, Carrito, Mi cuenta.",
-                "  · Comprar: usa /compras/opciones; filtra por origen/destino/fecha; botón ‘Añadir al carrito’ → selector de asientos → confirmar.",
-                "  · Carrito/Pago: seleccionar método (tarjeta o similar), confirmar; genera boleta y muestra total/neto.",
-                "  · Mis pasajes: ver detalle; cancelar si aplica (muestra reembolso estimado); estados finalizados resaltan.",
-                "  · Movimientos: lista compras/cancelaciones con filtros; KPIs de totales.",
-                "  · Tarjetas: listar/añadir/eliminar; soporta Visa/Mastercard.",
-                "  · Mi cuenta: cambiar avatar/logo, correo (demo), contraseña (demo). Cabecera usa avatar en la esquina superior derecha.",
+                "  · Comprar: usa /compras/opciones; filtra por origen/destino/fecha; ‘Añadir al carrito’ → selector de asientos → confirmar.",
+                "  · Carrito/Pago: seleccionar método (tarjeta), confirmar; genera boleta y muestra total/neto.",
+                "  · Mis pasajes: ver detalle; cancelar si aplica (reembolso estimado); estados finalizados resaltan.",
+                "  · Movimientos: compras/cancelaciones con filtros; KPIs de totales.",
+                "  · Tarjetas: listar/añadir/eliminar; Visa/Mastercard.",
+                "  · Mi cuenta: avatar/logo, correo, contraseña."
+            );
+
+            String empresaSection = String.join("\n",
                 "- Empresa:",
-                "  · Buses: crear/editar; capacidad; gestión de asientos (códigos tipo A1, A2…); generación automática; no exceder capacidad.",
-                "  · Viajes/Rutas: asignar bus y fechas/horas; estadística por ocupación.",
-                "  · Ventas: rango por días o por mes; detalle por venta; exporte/imprima reporte.",
-                "  · Estadísticas: KPIs (ingresos, tickets, empresas/buses activos), series diarias, rutas top; tolerante a datos faltantes.",
+                "  · Buses: crear/editar; capacidad; asientos (A1, A2…); generación automática.",
+                "  · Viajes/Rutas: asignar bus y fechas/horas; ocupación.",
+                "  · Ventas: rango por días/mes; detalle; exportar/imprimir.",
+                "  · Estadísticas: KPIs (ingresos, tickets, activos), series diarias, rutas top."
+            );
+
+            String adminSection = String.join("\n",
                 "- Administrador:",
                 "  · Usuarios: CRUD; alternar admin.",
-                "  · Empleados: CRUD; chofer/azafato; brevete (crear/editar/quitar).",
+                "  · Empleados: CRUD; chofer/azafato; brevete.",
                 "  · Sucursales: CRUD.",
-                "  · Estadísticas admin: KPIs globales, ventas diarias, ventas por empresa, rutas top.",
-                "- UI/Patrones: botón flotante de chat (abajo derecha); cabeceras coherentes; modo oscuro; toasts de confirmación.",
-                "Responde con lenguaje claro, usando los nombres de botones y secciones tal como aparecen en la app."
+                "  · Estadísticas admin: KPIs globales, ventas diarias, ventas por empresa, rutas top."
+            );
+
+            String uiNotes = "- UI/Patrones: botón flotante de chat; cabeceras coherentes; modo oscuro; toasts de confirmación.";
+
+            String scopeGuardCliente = "Si te piden algo de Empresa o Administrador, responde brevemente que solo puedes ayudar con pantallas y funciones del Cliente.";
+            String scopeGuardEmpresa = "Si te piden algo de Cliente o Administrador, responde brevemente que solo puedes ayudar con pantallas y funciones de Empresa.";
+            String scopeGuardAdmin = "Puedes responder sobre cualquier área de la aplicación (Cliente, Empresa y Administrador).";
+
+            String sections;
+            String guard;
+            switch (roleIn) {
+                case "cliente" -> { sections = clienteSection; guard = scopeGuardCliente; }
+                case "empresa" -> { sections = empresaSection; guard = scopeGuardEmpresa; }
+                case "admin" -> { sections = String.join("\n", clienteSection, empresaSection, adminSection); guard = scopeGuardAdmin; }
+                default -> { sections = clienteSection; guard = scopeGuardCliente; }
+            }
+
+            String systemContext = String.join("\n",
+                commonIntro,
+                guard,
+                sections,
+                uiNotes
             );
 
             String payload = "{\n" +

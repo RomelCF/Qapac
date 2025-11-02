@@ -112,6 +112,8 @@ public class CarritoController {
                     .destinoProvincia(sDes != null ? sDes.getProvincia() : null)
                     .fecha(f != null ? f.toString() : null)
                     .hora(h != null ? h.toString() : null)
+                    .llegadaFecha(ar.getFechaLlegada() != null ? ar.getFechaLlegada().toString() : null)
+                    .llegadaHora(ar.getHoraLlegada() != null ? ar.getHoraLlegada().toString() : null)
                     .empresaNombre(emp != null ? emp.getNombre() : null)
                     .empresaNumero(telefonoEmp)
                     .busMatricula(bus != null ? bus.getMatricula() : null)

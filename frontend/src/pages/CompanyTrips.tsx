@@ -13,10 +13,12 @@ export default function CompanyTrips() {
   const [q, setQ] = useState('')
   const [items, setItems] = useState<Array<Trip>>([])
   const [rutas, setRutas] = useState<Array<RutaOption>>([])
-  const [buses, setBuses] = useState<Array<BusOption>>([])
+  const [buses, setBuses] = useState<Array<BusOption>>([]) // solo disponibles
+  const [choferes, setChoferes] = useState<Array<EmpOption>>([])
+  const [azafatos, setAzafatos] = useState<Array<EmpOption>>([])
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Trip | null>(null)
-  const [form, setForm] = useState<FormState>({ idRuta: '', idBus: '', fPartida: '', hPartida: '', fLlegada: '', hLlegada: '' })
+  const [form, setForm] = useState<FormState>({ idRuta: '', idBus: '', fPartida: '', hPartida: '', fLlegada: '', hLlegada: '', idChofer: '', idAzafatos: [] })
   const [saving, setSaving] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
   const [detailsFor, setDetailsFor] = useState<Trip | null>(null)
@@ -28,7 +30,8 @@ export default function CompanyTrips() {
   type Trip = { idViaje:number; idRuta:number|null; origen:string|null; destino:string|null; idBus:number|null; busMatricula:string|null; fechaPartida:string|null; horaPartida:string|null; fechaLlegada:string|null; horaLlegada:string|null }
   type RutaOption = { idRuta:number; origen:string|null; destino:string|null; precio:number }
   type BusOption = { idBus:number; matricula:string }
-  type FormState = { idRuta: string|number; idBus: string|number; fPartida: string; hPartida: string; fLlegada: string; hLlegada: string }
+  type EmpOption = { id:number; name:string }
+  type FormState = { idRuta: string|number; idBus: string|number; fPartida: string; hPartida: string; fLlegada: string; hLlegada: string; idChofer: string|number; idAzafatos: Array<string|number> }
   type TripDetails = { choferes:string[]; azafatos:string[]; asientos:Array<{ idAsiento:number; codigo:string; disponibilidad:string|null }>; totalAsientos:number; disponibles:number; vendidos:number }
 
   useEffect(() => {
@@ -57,17 +60,13 @@ export default function CompanyTrips() {
     setLoading(true)
     setError(null)
     try {
-      const [vRes, rRes, bRes] = await Promise.all([
+      const [vRes, rRes] = await Promise.all([
         fetch(`${API_BASE}/viajes?empresaId=${empresaId}`),
-        fetch(`${API_BASE}/rutas?empresaId=${empresaId}`),
-        fetch(`${API_BASE}/buses?empresaId=${empresaId}`)
+        fetch(`${API_BASE}/rutas?empresaId=${empresaId}`)
       ])
       if (vRes.ok) setItems(await vRes.json())
       if (rRes.ok) setRutas(await rRes.json())
-      if (bRes.ok) {
-        const list = await bRes.json()
-        setBuses(list.map((x:any)=>({ idBus: x.idBus, matricula: x.matricula })))
-      }
+      // buses y empleados disponibles se cargan al abrir el formulario
     } catch (e:any) {
       setError(e.message || 'Error al cargar viajes')
     } finally {
@@ -87,7 +86,7 @@ export default function CompanyTrips() {
 
   function onNew() {
     setEditing(null)
-    setForm({ idRuta: '', idBus: '', fPartida: '', hPartida: '', fLlegada: '', hLlegada: '' })
+    setForm({ idRuta: '', idBus: '', fPartida: '', hPartida: '', fLlegada: '', hLlegada: '', idChofer: '', idAzafatos: [] })
     setShowForm(true)
   }
 
@@ -100,9 +99,40 @@ export default function CompanyTrips() {
       hPartida: (it.horaPartida||'').slice(0,5),
       fLlegada: it.fechaLlegada || '',
       hLlegada: (it.horaLlegada||'').slice(0,5),
+      idChofer: '',
+      idAzafatos: []
     })
     setShowForm(true)
   }
+
+  // Cargar opciones de buses y empleados disponibles al abrir el formulario
+  useEffect(() => {
+    if (!showForm || !empresaId) return
+    ;(async () => {
+      try {
+        const [bRes, eRes] = await Promise.all([
+          fetch(`${API_BASE}/viajes/buses-disponibles?empresaId=${empresaId}`),
+          fetch(`${API_BASE}/viajes/empleados-disponibles`)
+        ])
+        if (bRes.ok) {
+          const list = await bRes.json()
+          setBuses((list as any[]).map(x => ({ idBus: x.id, matricula: x.name })))
+        } else {
+          setBuses([])
+        }
+        if (eRes.ok) {
+          const data = await eRes.json()
+          setChoferes(Array.isArray(data.choferes) ? data.choferes : [])
+          setAzafatos(Array.isArray(data.azafatos) ? data.azafatos : [])
+        } else {
+          setChoferes([]); setAzafatos([])
+        }
+      } catch {
+        setBuses([]); setChoferes([]); setAzafatos([])
+      }
+    })()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showForm, empresaId])
 
   async function onDelete(it: Trip) {
     if (!confirm('¿Eliminar el viaje seleccionado?')) return
@@ -129,6 +159,8 @@ export default function CompanyTrips() {
         horaPartida: form.hPartida,
         fechaLlegada: form.fLlegada,
         horaLlegada: form.hLlegada,
+        idChofer: form.idChofer ? Number(form.idChofer) : null,
+        idAzafatos: (form.idAzafatos || []).map(v => Number(v))
       }
       const method = editing ? 'PUT' : 'POST'
       const url = editing ? `${API_BASE}/viajes/${editing.idViaje}` : `${API_BASE}/viajes`
@@ -250,11 +282,32 @@ export default function CompanyTrips() {
                 <div className="md:col-span-1">
                   <label className="text-sm text-text-secondary">Bus</label>
                   <select value={form.idBus} onChange={e=>setForm(f=>({...f, idBus: e.target.value}))} className="w-full rounded-lg border border-border-soft bg-white/70 px-3 py-2 outline-none focus:border-primary">
-                    <option value="">Selecciona un bus</option>
+                    <option value="">Selecciona un bus (disponible)</option>
                     {buses.map(b => (
                       <option key={b.idBus} value={b.idBus}>{b.matricula}</option>
                     ))}
                   </select>
+                </div>
+                <div className="md:col-span-1">
+                  <label className="text-sm text-text-secondary">Chofer</label>
+                  <select value={form.idChofer} onChange={e=>setForm(f=>({...f, idChofer: e.target.value}))} className="w-full rounded-lg border border-border-soft bg-white/70 px-3 py-2 outline-none focus:border-primary">
+                    <option value="">Selecciona un chofer</option>
+                    {choferes.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-sm text-text-secondary">Azafatos</label>
+                  <select multiple value={form.idAzafatos.map(String)} onChange={e=>{
+                    const opts = Array.from(e.target.selectedOptions).map(o=>o.value)
+                    setForm(f=>({...f, idAzafatos: opts}))
+                  }} className="w-full rounded-lg border border-border-soft bg-white/70 px-3 py-2 outline-none focus:border-primary min-h-[120px]">
+                    {azafatos.map(a => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                  </select>
+                  <div className="text-xs text-text-secondary mt-1">Mantén presionada la tecla Ctrl/Cmd para seleccionar múltiples.</div>
                 </div>
                 <div>
                   <label className="text-sm text-text-secondary">Fecha partida</label>

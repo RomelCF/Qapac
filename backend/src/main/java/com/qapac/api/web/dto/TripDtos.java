@@ -25,6 +25,8 @@ public class TripDtos {
         public String horaPartida;  // HH:mm
         public String fechaLlegada; // yyyy-MM-dd
         public String horaLlegada;  // HH:mm
+        public Integer idChofer;    // opcional
+        public java.util.List<Integer> idAzafatos; // opcional
     }
     public static class UpdateTripRequest extends CreateTripRequest {}
 }

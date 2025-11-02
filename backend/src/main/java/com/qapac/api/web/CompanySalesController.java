@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,7 +25,9 @@ public class CompanySalesController {
     @GetMapping("/list")
     public ResponseEntity<SalesListResponse> list(@RequestParam Integer empresaId,
                                                   @RequestParam(required = false) String from,
-                                                  @RequestParam(required = false) String to) {
+                                                  @RequestParam(required = false) String to,
+                                                  @RequestParam(required = false) String estado,
+                                                  @RequestParam(required = false) String metodo) {
         DateRange dr = resolveRange(from, to);
         List<DetalleVenta> detalles = detalleVentaRepository
                 .findByVenta_FechaBetweenAndPasaje_AsignacionRuta_Ruta_Empresa_IdEmpresa(dr.from, dr.to, empresaId);
@@ -45,11 +48,12 @@ public class CompanySalesController {
             String cliente = (p.getCliente() != null && (p.getCliente().getNombres() != null || p.getCliente().getApellidos() != null))
                 ? ((Optional.ofNullable(p.getCliente().getNombres()).orElse("") + " " + Optional.ofNullable(p.getCliente().getApellidos()).orElse("")).trim())
                 : "";
-            String metodo = v.getMetodoPago() != null ? v.getMetodoPago().getNombre() : (v.getTarjeta() != null ? "Tarjeta" : "");
+            String metodoPago = v.getMetodoPago() != null ? v.getMetodoPago().getNombre() : (v.getTarjeta() != null ? "Tarjeta" : "");
+            String estadoCarrito = p.getEstado() != null ? p.getEstado().name() : null;
             items.add(new SalesItem(v.getIdVenta(), d.getIdDetalleVenta(),
                     v.getFecha() != null ? v.getFecha().toString() : null,
                     v.getHora() != null ? v.getHora().toString() : null,
-                    ruta, busMatricula, asiento, precio, cliente, metodo));
+                    ruta, busMatricula, asiento, precio, cliente, metodoPago, estadoCarrito));
         }
         // ordenar por fecha desc, hora desc
         items.sort((a, b) -> {
@@ -57,6 +61,15 @@ public class CompanySalesController {
             if (cmp != 0) return cmp;
             return Objects.compare(b.hora, a.hora, Comparator.nullsLast(String::compareTo));
         });
+        // filtros opcionales por estado y metodo
+        if (estado != null && !estado.isBlank()) {
+            String e = estado.trim().toUpperCase();
+            items = items.stream().filter(it -> it.estadoCarrito != null && it.estadoCarrito.equalsIgnoreCase(e)).collect(Collectors.toList());
+        }
+        if (metodo != null && !metodo.isBlank()) {
+            String m = metodo.trim().toLowerCase();
+            items = items.stream().filter(it -> it.metodoPago != null && it.metodoPago.toLowerCase().contains(m)).collect(Collectors.toList());
+        }
         return ResponseEntity.ok(new SalesListResponse(items));
     }
 
@@ -77,9 +90,17 @@ public class CompanySalesController {
                         r!=null? r.getPrecio() : BigDecimal.ZERO))
                 .collect(Collectors.toList());
         BigDecimal total = items.stream().map(i->i.precio).reduce(BigDecimal.ZERO, BigDecimal::add);
+        boolean cancelada = list.stream().anyMatch(d -> d.getPasaje()!=null && d.getPasaje().getEstado() == com.qapac.api.domain.enums.CarritoEstado.cancelado);
+        BigDecimal refund = cancelada ? total.divide(BigDecimal.valueOf(3), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal empresaGana;
+        if (cancelada) {
+            empresaGana = total.subtract(refund).setScale(2, RoundingMode.HALF_UP);
+        } else {
+            empresaGana = total.setScale(2, RoundingMode.HALF_UP);
+        }
         return ResponseEntity.ok(new SaleDetailResponse(
                 v.getIdVenta(), v.getFecha()!=null? v.getFecha().toString():null, v.getHora()!=null? v.getHora().toString():null,
-                ruta, busMatricula, metodo, cliente, total, items
+                ruta, busMatricula, metodo, cliente, total.setScale(2, RoundingMode.HALF_UP), items, cancelada, refund, empresaGana
         ));
     }
 

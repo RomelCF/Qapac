@@ -20,6 +20,11 @@ export default function CompanyBuses() {
   const [estado, setEstado] = useState('disponible')
   const [saving, setSaving] = useState(false)
   const [asientos, setAsientos] = useState<Array<{codigo:string}>>([])
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [viewerOpen, setViewerOpen] = useState(false)
+  const [viewerSrc, setViewerSrc] = useState<string | null>(null)
+  const [viewerLoading, setViewerLoading] = useState(false)
+  const [imagePreviewSrc, setImagePreviewSrc] = useState<string | null>(null)
   const API_BASE = (import.meta as unknown as { env: Record<string, string> }).env?.VITE_API_BASE_URL || 'http://localhost:8080'
 
   useEffect(() => {
@@ -77,6 +82,9 @@ export default function CompanyBuses() {
     setCapacidad('')
     setEstado('disponible')
     setAsientos([]) // Reset asientos for new bus
+    setImageFile(null)
+    if (imagePreviewSrc) { URL.revokeObjectURL(imagePreviewSrc); }
+    setImagePreviewSrc(null)
     setShowForm(true)
   }
 
@@ -85,6 +93,9 @@ export default function CompanyBuses() {
     setMatricula(it.matricula)
     setCapacidad(it.capacidad)
     setEstado(it.estado)
+    setImageFile(null)
+    if (imagePreviewSrc) { URL.revokeObjectURL(imagePreviewSrc); }
+    setImagePreviewSrc(null)
     // Obtener asientos del backend
     try {
       const res = await fetch(`${API_BASE}/buses/${it.idBus}/asientos`);
@@ -96,6 +107,19 @@ export default function CompanyBuses() {
       }
     } catch {
       setAsientos([]);
+    }
+    // Cargar imagen actual para previsualizar (si existe)
+    try {
+      const im = await fetch(`${API_BASE}/buses/${it.idBus}/imagen`)
+      if (im.ok) {
+        const blob = await im.blob()
+        const url = URL.createObjectURL(blob)
+        setImagePreviewSrc(url)
+      } else {
+        setImagePreviewSrc(null)
+      }
+    } catch {
+      setImagePreviewSrc(null)
     }
     setShowForm(true)
   }
@@ -112,7 +136,7 @@ export default function CompanyBuses() {
   }
 
   function onAddAsiento() {
-    if (asientos.length >= (capacidad || 0)) {
+    if (asientos.length >= Number(capacidad || 0)) {
       alert('No puedes agregar más asientos que la capacidad del bus');
       return;
     }
@@ -130,19 +154,37 @@ export default function CompanyBuses() {
     if (!empresaId) return
     if (!matricula || !capacidad || capacidad <= 0) { alert('Complete matrícula y capacidad válida'); return }
     if (!editing && asientos.length === 0) { alert('Agrega al menos un asiento'); return }
-    if (!editing && asientos.some(a => !a.codigo)) { alert('Completa todos los códigos de los asientos'); return }
+    if (asientos.some(a => !a.codigo || !a.codigo.trim())) { alert('Completa todos los códigos de los asientos'); return }
     setSaving(true)
     try {
       let body
       if (editing) {
-        body = { matricula, capacidad: Number(capacidad), estado };
+        body = { 
+          matricula, 
+          capacidad: Number(capacidad), 
+          estado,
+          asientos: asientos.map(a => ({ codigo: a.codigo.trim() }))
+        };
       } else {
-        body = { matricula, capacidad: Number(capacidad), estado, idEmpresa: empresaId, asientos };
+        body = { matricula, capacidad: Number(capacidad), estado, idEmpresa: empresaId, asientos: asientos.map(a => ({ codigo: a.codigo.trim() })) };
       }
       const method = editing ? 'PUT' : 'POST'
       const url = editing ? `${API_BASE}/buses/${editing.idBus}` : `${API_BASE}/buses`
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       if (!res.ok) throw new Error('No se pudo guardar')
+      // Si hay imagen, subirla
+      if (imageFile) {
+        const busId = editing ? editing.idBus : await res.json()
+        const form = new FormData()
+        form.append('file', imageFile)
+        const up = await fetch(`${API_BASE}/buses/${busId}/imagen`, { method: 'PUT', body: form })
+        if (!up.ok) {
+          const t = await up.text()
+          alert(t || 'La imagen no se pudo subir')
+        }
+      }
+      if (imagePreviewSrc) { URL.revokeObjectURL(imagePreviewSrc); }
+      setImagePreviewSrc(null)
       setShowForm(false)
       await loadBuses()
     } catch (e:any) {
@@ -167,11 +209,30 @@ export default function CompanyBuses() {
   }
   // Cortar asientos extra si se cambia la capacidad a menor que la cantidad actual
   useEffect(() => {
-    if (asientos.length > (capacidad || 0)) {
-      setAsientos(asientos.slice(0, capacidad || 0));
+    if (asientos.length > Number(capacidad || 0)) {
+      setAsientos(asientos.slice(0, Number(capacidad || 0)));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [capacidad]);
+
+  async function openViewer(idBus: number) {
+    setViewerOpen(true)
+    setViewerLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/buses/${idBus}/imagen`)
+      if (res.ok) {
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        setViewerSrc(url)
+      } else {
+        setViewerSrc(null)
+      }
+    } catch {
+      setViewerSrc(null)
+    } finally {
+      setViewerLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background-light text-text-primary">
@@ -222,6 +283,10 @@ export default function CompanyBuses() {
                         <span className="material-symbols-outlined text-base">delete</span>
                         Eliminar
                       </button>
+                      <button onClick={()=>openViewer(it.idBus)} className="px-3 py-1 rounded-md border border-border-soft hover:border-primary text-xs inline-flex items-center gap-1">
+                        <span className="material-symbols-outlined text-base">image</span>
+                        Ver imagen
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -253,7 +318,7 @@ export default function CompanyBuses() {
                 <div>
                   <label className="sr-only" htmlFor="cap">Capacidad</label>
                   <input id="cap" type="number" min={1} value={capacidad} onChange={e=>setCapacidad(e.target.value === '' ? '' : Number(e.target.value))} placeholder="Capacidad" className="w-full rounded-lg border border-border-soft bg-white/70 px-4 py-2 outline-none focus:border-primary" />
-                  {!editing && capacidad > 0 && (
+                  {!editing && Number(capacidad) > 0 && (
                     <button type="button" onClick={()=>generarAsientosAutomaticos(Number(capacidad))} className="mt-2 px-3 py-1 rounded bg-amber-500 text-white hover:bg-amber-700">
                       Generar asientos automáticamente
                     </button>
@@ -268,10 +333,33 @@ export default function CompanyBuses() {
                     <option value="inactivo">Inactivo</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-xs text-text-secondary mb-1">Imagen del bus (opcional)</label>
+                  <input type="file" accept="image/*" onChange={e=>{
+                    const f = e.target.files?.[0] || null;
+                    if (!f) { setImageFile(null); if (imagePreviewSrc) { URL.revokeObjectURL(imagePreviewSrc); } setImagePreviewSrc(null); return }
+                    const max = 5 * 1024 * 1024;
+                    if (f.size > max) { alert('La imagen supera 5MB'); e.currentTarget.value = ''; return }
+                    if (!f.type.startsWith('image/')) { alert('Archivo no es una imagen válida'); e.currentTarget.value = ''; return }
+                    setImageFile(f);
+                    if (imagePreviewSrc) { URL.revokeObjectURL(imagePreviewSrc); }
+                    setImagePreviewSrc(URL.createObjectURL(f));
+                  }} className="w-full rounded-lg border border-border-soft bg-white/70 px-4 py-2 outline-none focus:border-primary" />
+                  <div className="mt-3 min-h-[120px] rounded-lg border border-dashed border-border-soft bg-white/50 flex items-center justify-center p-2">
+                    {imagePreviewSrc ? (
+                      <img src={imagePreviewSrc} alt="Previsualización" className="max-h-40 w-auto rounded" />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-text-secondary text-sm">
+                        <span className="material-symbols-outlined" style={{fontSize: 48}}>directions_bus</span>
+                        <div>Sin imagen</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <div className="border-t pt-4 mt-2">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-bold text-lg">Asientos</h3>
-                    <button type="button" onClick={onAddAsiento} className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded flex items-center gap-1" disabled={asientos.length >= (capacidad || 0)}><span className="material-symbols-outlined text-base">add</span>Agregar asiento</button>
+                    <button type="button" onClick={onAddAsiento} className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded flex items-center gap-1" disabled={asientos.length >= Number(capacidad || 0)}><span className="material-symbols-outlined text-base">add</span>Agregar asiento</button>
                   </div>
                   <div className="space-y-2">
                     {asientos.length === 0 && <div className="text-sm text-text-secondary">Sin asientos agregados</div>}
@@ -288,6 +376,29 @@ export default function CompanyBuses() {
                   <button type="submit" disabled={saving} className="px-4 py-2 rounded-lg bg-primary text-background-light font-bold hover:bg-accent disabled:opacity-60">{saving ? 'Guardando...' : 'Guardar'}</button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {viewerOpen && (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+            <div className="bg-white rounded-xl border border-border-soft shadow-2xl max-w-2xl w-full p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-display text-lg">Imagen del bus</h3>
+                <button onClick={()=>{ setViewerOpen(false); if(viewerSrc){ URL.revokeObjectURL(viewerSrc); } setViewerSrc(null); }} className="text-text-secondary hover:text-primary"><span className="material-symbols-outlined">close</span></button>
+              </div>
+              <div className="min-h-[240px] flex items-center justify-center">
+                {viewerLoading ? (
+                  <div className="text-text-secondary">Cargando...</div>
+                ) : viewerSrc ? (
+                  <img src={viewerSrc} alt="Bus" className="max-h-[60vh] w-auto rounded" />
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-text-secondary">
+                    <span className="material-symbols-outlined" style={{fontSize: 72}}>directions_bus</span>
+                    <div>No hay imagen</div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

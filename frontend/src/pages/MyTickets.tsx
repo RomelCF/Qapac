@@ -111,7 +111,8 @@ export default function MyTickets() {
         setRows(prev => prev.filter(r => r.id !== id))
         setPendingCancel(null)
       } else {
-        alert('No se pudo cancelar el pasaje')
+        const msg = await res.text()
+        alert(msg || 'No se pudo cancelar el pasaje')
       }
     } catch {
       alert('Error de red al cancelar')

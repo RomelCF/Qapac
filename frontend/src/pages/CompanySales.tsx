@@ -13,16 +13,21 @@ export default function CompanySales() {
   const [error, setError] = useState<string | null>(null)
   const [items, setItems] = useState<Array<SaleItem>>([])
   const [q, setQ] = useState('')
-  const [range, setRange] = useState<'7d'|'30d'|'90d'>('30d')
-  const [month, setMonth] = useState<string>(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` })
+  const [fromDate, setFromDate] = useState<string>(() => {
+    const end = new Date(); const start = new Date(); start.setDate(end.getDate()-29)
+    return start.toISOString().slice(0,10)
+  })
+  const [toDate, setToDate] = useState<string>(() => new Date().toISOString().slice(0,10))
+  const [estado, setEstado] = useState<string>('')
+  const [metodo, setMetodo] = useState<string>('')
   const [detailOpen, setDetailOpen] = useState(false)
   const [detail, setDetail] = useState<SaleDetail|null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState<string|null>(null)
   const API_BASE = (import.meta as unknown as { env: Record<string, string> }).env?.VITE_API_BASE_URL || 'http://localhost:8080'
 
-  type SaleItem = { idVenta:number; idDetalleVenta:number; fecha:string|null; hora:string|null; ruta:string; busMatricula:string|null; asiento:string|null; precio:number; cliente:string; metodoPago:string }
-  type SaleDetail = { idVenta:number; fecha:string|null; hora:string|null; ruta:string; busMatricula:string|null; metodoPago:string; cliente:string; total:number; items:Array<{ asiento:string|null; precio:number }> }
+  type SaleItem = { idVenta:number; idDetalleVenta:number; fecha:string|null; hora:string|null; ruta:string; busMatricula:string|null; asiento:string|null; precio:number; cliente:string; metodoPago:string; estadoCarrito?: string|null }
+  type SaleDetail = { idVenta:number; fecha:string|null; hora:string|null; ruta:string; busMatricula:string|null; metodoPago:string; cliente:string; total:number; items:Array<{ asiento:string|null; precio:number }>; cancelada?: boolean; refund?: number; empresaGana?: number }
 
   useEffect(() => { setEmail(localStorage.getItem('userEmail') || '') }, [])
   useEffect(() => { (async()=>{
@@ -30,7 +35,7 @@ export default function CompanySales() {
     try { const res = await fetch(`${API_BASE}/auth/profile?userId=${uid}`); if (res.ok){ const p=await res.json(); if (p?.idEmpresa) setEmpresaId(Number(p.idEmpresa)) } } catch {}
   })() }, [])
 
-  useEffect(() => { if (empresaId){ setError(null); void Promise.all([loadEmpresa(), loadSales()]) } }, [empresaId, range, month])
+  useEffect(() => { if (empresaId){ setError(null); void Promise.all([loadEmpresa(), loadSales()]) } }, [empresaId, fromDate, toDate, estado, metodo])
 
   async function loadEmpresa(){
     try {
@@ -40,24 +45,26 @@ export default function CompanySales() {
   }
 
   function computeFromTo(): { from: string; to: string } {
-    if (month) {
-      // Si está seleccionado un mes, usamos ese
-      const [y, m] = month.split('-').map(Number)
-      const from = `${y}-${m.toString().padStart(2, '0')}-01`
-      // Obtener último día del mes
-      const to = new Date(y, m, 0)
-      return { from, to: to.toISOString().slice(0, 10) }
+    // Validar fechas
+    const from = fromDate
+    const to = toDate
+    if (!from || !to) return { from: from || to || new Date().toISOString().slice(0,10), to: to || from || new Date().toISOString().slice(0,10) }
+    // Asegurar from <= to
+    if (new Date(from) > new Date(to)) {
+      // Intercambiar si el usuario se equivoca
+      return { from: to, to: from }
     }
-    const days = range==='7d'?7: range==='30d'?30:90
-    const end = new Date(); const start = new Date(); start.setDate(end.getDate()-(days-1))
-    return { from: start.toISOString().slice(0,10), to: end.toISOString().slice(0,10) }
+    return { from, to }
   }
 
   async function loadSales(){
     setLoading(true); setError(null)
     try {
       const { from, to } = computeFromTo()
-      const res = await fetch(`${API_BASE}/company-sales/list?empresaId=${empresaId}&from=${from}&to=${to}`)
+      const params = new URLSearchParams({ empresaId: String(empresaId), from, to })
+      if (estado) params.set('estado', estado)
+      if (metodo) params.set('metodo', metodo)
+      const res = await fetch(`${API_BASE}/company-sales/list?${params.toString()}`)
       if (!res.ok) throw new Error('No se pudo cargar ventas')
       const data = await res.json()
       setItems((data.items||[]).map((x:any)=>({ ...x, precio: Number(x.precio??0) })))
@@ -71,7 +78,18 @@ export default function CompanySales() {
 
   async function openDetail(idVenta:number){
     setDetailOpen(true); setDetailLoading(true); setDetailError(null); setDetail(null)
-    try { const r = await fetch(`${API_BASE}/company-sales/detail/${idVenta}`); if (!r.ok) throw new Error('No se pudo cargar el detalle'); const d = await r.json(); setDetail({ ...d, total: Number(d.total??0), items: (d.items||[]).map((it:any)=>({ asiento: it.asiento, precio: Number(it.precio??0) })) }) } catch(e:any){ setDetailError(e.message||'Error al cargar detalle') } finally { setDetailLoading(false) }
+    try {
+      const r = await fetch(`${API_BASE}/company-sales/detail/${idVenta}`)
+      if (!r.ok) throw new Error('No se pudo cargar el detalle')
+      const d = await r.json()
+      setDetail({
+        ...d,
+        total: Number(d.total??0),
+        refund: d.refund != null ? Number(d.refund) : undefined,
+        empresaGana: d.empresaGana != null ? Number(d.empresaGana) : undefined,
+        items: (d.items||[]).map((it:any)=>({ asiento: it.asiento, precio: Number(it.precio??0) }))
+      })
+    } catch(e:any){ setDetailError(e.message||'Error al cargar detalle') } finally { setDetailLoading(false) }
   }
 
   function printReport(){
@@ -149,12 +167,9 @@ export default function CompanySales() {
         <div className="w-full max-w-5xl mb-6 flex items-center justify-between gap-4">
           <h1 className="font-display text-3xl text-primary">Ventas</h1>
           <div className="flex items-center gap-2">
-            <select value={range} onChange={e=>setRange(e.target.value as any)} className="rounded-lg border border-border-soft bg-white/70 px-3 py-2 outline-none focus:border-primary">
-              <option value="7d">7 días</option>
-              <option value="30d">30 días</option>
-              <option value="90d">90 días</option>
-            </select>
-            <input type="month" value={month} onChange={e=>{ setMonth(e.target.value); setError(null); }} className="rounded-lg border border-border-soft bg-white/70 px-3 py-2 outline-none focus:border-primary" />
+            <input type="date" value={fromDate} onChange={e=>setFromDate(e.target.value)} className="rounded-lg border border-border-soft bg-white/70 px-3 py-2 outline-none focus:border-primary" />
+            <span className="text-text-secondary">a</span>
+            <input type="date" value={toDate} onChange={e=>setToDate(e.target.value)} className="rounded-lg border border-border-soft bg-white/70 px-3 py-2 outline-none focus:border-primary" />
             <button onClick={printReport} className="px-4 py-2 rounded-lg bg-primary text-background-light font-bold hover:bg-accent inline-flex items-center gap-2">
               <span className="material-symbols-outlined">print</span>
               Imprimir reporte
@@ -162,8 +177,15 @@ export default function CompanySales() {
           </div>
         </div>
 
-        <div className="w-full max-w-5xl mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="w-full max-w-5xl mb-4 grid grid-cols-1 md:grid-cols-4 gap-3">
           <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Buscar por ruta, bus o cliente" className="w-full rounded-lg border border-border-soft bg-white/70 px-4 py-2 outline-none focus:border-primary" />
+          <select value={estado} onChange={e=>setEstado(e.target.value)} className="w-full rounded-lg border border-border-soft bg-white/70 px-4 py-2 outline-none focus:border-primary">
+            <option value="">Estado (todos)</option>
+            <option value="pagado">Pagado</option>
+            <option value="completado">Completado</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+          <input value={metodo} onChange={e=>setMetodo(e.target.value)} placeholder="Método de pago (texto)" className="w-full rounded-lg border border-border-soft bg-white/70 px-4 py-2 outline-none focus:border-primary" />
           <button onClick={loadSales} className="px-4 py-2 rounded-lg border border-border-soft hover:border-primary">Refrescar</button>
         </div>
 
@@ -182,6 +204,7 @@ export default function CompanySales() {
                   <th className="text-left p-3">Asiento</th>
                   <th className="text-left p-3">Cliente</th>
                   <th className="text-left p-3">Método</th>
+                  <th className="text-left p-3">Estado</th>
                   <th className="text-left p-3">Precio</th>
                   <th className="text-left p-3">Acciones</th>
                 </tr>
@@ -196,6 +219,13 @@ export default function CompanySales() {
                     <td className="p-3">{r.asiento || '-'}</td>
                     <td className="p-3">{r.cliente || '-'}</td>
                     <td className="p-3">{r.metodoPago || '-'}</td>
+                    <td className="p-3">
+                      {r.estadoCarrito ? (
+                        <span className={`px-2 py-1 rounded text-xs border ${r.estadoCarrito.toLowerCase()==='cancelado' ? 'border-red-300 text-red-700 bg-red-50' : r.estadoCarrito.toLowerCase()==='completado' ? 'border-green-300 text-green-700 bg-green-50' : 'border-amber-300 text-amber-700 bg-amber-50'}`}>
+                          {r.estadoCarrito}
+                        </span>
+                      ) : '-'}
+                    </td>
                     <td className="p-3">S/ {(r.precio||0).toFixed(2)}</td>
                     <td className="p-3">
                       <button onClick={()=>openDetail(r.idVenta)} className="px-3 py-1 rounded-md border border-border-soft hover:border-primary text-xs inline-flex items-center gap-1">
@@ -206,7 +236,7 @@ export default function CompanySales() {
                   </tr>
                 ))}
                 {filtered().length===0 && (
-                  <tr><td className="p-4 text-text-secondary" colSpan={9}>No hay ventas en el rango seleccionado</td></tr>
+                  <tr><td className="p-4 text-text-secondary" colSpan={10}>No hay ventas en el rango seleccionado</td></tr>
                 )}
               </tbody>
             </table>
@@ -231,6 +261,16 @@ export default function CompanySales() {
                     <div><span className="text-text-secondary">Bus:</span> {detail.busMatricula || '-'}</div>
                     <div><span className="text-text-secondary">Método de pago:</span> {detail.metodoPago}</div>
                     <div><span className="text-text-secondary">Cliente:</span> {detail.cliente}</div>
+                  </div>
+                  <div className="rounded-lg border border-border-soft bg-white/60 p-3 text-sm">
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <div>
+                        <span className="text-text-secondary">Estado:</span>{' '}
+                        {detail.cancelada ? <span className="px-2 py-1 rounded text-xs border border-red-300 text-red-700 bg-red-50">Cancelada</span> : <span className="px-2 py-1 rounded text-xs border border-green-300 text-green-700 bg-green-50">No cancelada</span>}
+                      </div>
+                      <div><span className="text-text-secondary">Reembolso (1/3):</span> S/ {(detail.refund ?? 0).toFixed(2)}</div>
+                      <div><span className="text-text-secondary">Gana empresa:</span> S/ {(detail.empresaGana ?? detail.total).toFixed(2)}</div>
+                    </div>
                   </div>
                   <div className="rounded-lg border border-border-soft bg-white/60 p-3">
                     <h3 className="font-display text-lg mb-2">Asientos</h3>

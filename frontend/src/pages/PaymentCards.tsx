@@ -16,11 +16,15 @@ type CartRow = {
   destinoProvincia?: string
   fecha?: string
   hora?: string
+  llegadaFecha?: string
+  llegadaHora?: string
   empresaNombre?: string
   empresaNumero?: string
   busMatricula?: string
   seatCode?: string
   precio?: number | string
+  sucursalOrigen?: { nombre?: string; provincia?: string; direccion?: string }
+  sucursalDestino?: { nombre?: string; provincia?: string; direccion?: string }
 }
 
 export default function PaymentCards() {
@@ -150,36 +154,82 @@ export default function PaymentCards() {
     }
   }
 
+  function formatDT(fecha?: string, hora?: string) {
+    if (!fecha || !hora) return '-'
+    return `${fecha} ${hora}`
+  }
+
+  function calcDurationHours(it: CartRow) {
+    if (!it.fecha || !it.hora || !it.llegadaFecha || !it.llegadaHora) return '-'
+    const start = new Date(`${it.fecha}T${it.hora}`)
+    const end = new Date(`${it.llegadaFecha}T${it.llegadaHora}`)
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return '-'
+    const diffMs = end.getTime() - start.getTime()
+    const hrs = diffMs / 3600000
+    if (hrs < 0) return '-'
+    return `${hrs.toFixed(1)} h`
+  }
+
   function downloadReceipt() {
     if (!successData) return
     const w = window.open('', '_blank')
     if (!w) return
     const styles = `
       body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial; color: #0f172a; }
-      .card { max-width: 720px; margin: 24px auto; border: 2px solid #e5e7eb; border-radius: 12px; padding: 20px; background: #ffffff; }
-      .row { display: flex; justify-content: space-between; margin: 6px 0; }
+      .card { max-width: 820px; margin: 24px auto; border: 2px solid #e5e7eb; border-radius: 12px; padding: 20px; background: #ffffff; }
+      .row { display: flex; justify-content: space-between; margin: 6px 0; gap: 12px; }
       .muted { color: #64748b; }
       .title { font-size: 20px; color: #2563eb; font-weight: 700; margin: 0 0 12px; text-align: center; }
       .logo { height: 56px; }
       .hr { height: 2px; background: #f1f5f9; border: 0; margin: 12px 0; }
       .badge { display: inline-block; padding: 2px 8px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 9999px; color: #1d4ed8; font-size: 12px; }
-      table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-      th, td { border: 1px solid #e5e7eb; padding: 6px 8px; font-size: 12px; text-align: left; }
-      th { background: #f8fafc; }
+      .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      .list { display: flex; flex-direction: column; gap: 12px; }
+      .section { border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px; background: #f8fafc; }
+      .sec-title { font-weight: 700; margin-bottom: 6px; color: #0f172a; }
+      .kv { display:flex; justify-content: space-between; gap: 8px; margin: 4px 0; }
+      .footer { margin-top: 14px; font-size: 12px; color: #0f172a; }
     `
     const items = (successData.items || [])
-    const rowsHtml = items.map(it => (
-      `<tr>
-         <td>${it.origenProvincia ?? '-'}</td>
-         <td>${it.destinoProvincia ?? '-'}</td>
-         <td>${it.fecha ?? '-'}</td>
-         <td>${it.hora ?? '-'}</td>
-         <td>${it.empresaNombre ?? '-'}</td>
-         <td>${it.busMatricula ?? '-'}</td>
-         <td>${it.seatCode ?? '-'}</td>
-         <td>S/ ${Number(it.precio ?? 0).toFixed(2)}</td>
-       </tr>`
-    )).join('')
+    const rowsHtml = items.map(it => {
+      const salida = formatDT(it.fecha, it.hora)
+      const llegada = formatDT(it.llegadaFecha, it.llegadaHora)
+      const dur = calcDurationHours(it)
+      return `
+        <div class="section">
+          <div class="grid">
+            <div>
+              <div class="sec-title">Origen</div>
+              <div>${it.sucursalOrigen?.nombre ?? '-'}</div>
+              <div class="muted">${it.sucursalOrigen?.provincia ?? it.origenProvincia ?? '-'}</div>
+              <div class="muted">${it.sucursalOrigen?.direccion ?? '-'}</div>
+            </div>
+            <div>
+              <div class="sec-title">Destino</div>
+              <div>${it.sucursalDestino?.nombre ?? '-'}</div>
+              <div class="muted">${it.sucursalDestino?.provincia ?? it.destinoProvincia ?? '-'}</div>
+              <div class="muted">${it.sucursalDestino?.direccion ?? '-'}</div>
+            </div>
+          </div>
+          <div class="grid" style="margin-top:8px;">
+            <div>
+              <div class="sec-title">Salida</div>
+              <div>${salida}</div>
+            </div>
+            <div>
+              <div class="sec-title">Llegada</div>
+              <div>${llegada}</div>
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px;">
+            <div class="kv"><span>Duración aprox.</span><strong>${dur}</strong></div>
+            <div class="kv"><span>Empresa</span><strong>${it.empresaNombre ?? '-'}</strong></div>
+            <div class="kv"><span>Bus</span><strong>${it.busMatricula ?? '-'}</strong></div>
+            <div class="kv"><span>Asiento</span><strong>${it.seatCode ?? '-'}</strong></div>
+            <div class="kv"><span>Precio</span><strong>S/ ${Number(it.precio ?? 0).toFixed(2)}</strong></div>
+          </div>
+        </div>`
+    }).join('')
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>Boleta - Qapac</title><style>${styles}</style></head><body>
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
@@ -194,26 +244,12 @@ export default function PaymentCards() {
         ${successData.tarjetaMasked ? `<div class="row"><div class="muted">Tarjeta</div><div>${successData.tarjetaMasked}</div></div>` : ''}
         <hr class="hr"/>
         <div class="muted" style="margin: 6px 0;">Detalle de pasajes</div>
-        <table>
-          <thead>
-            <tr>
-              <th>Origen</th>
-              <th>Destino</th>
-              <th>Fecha</th>
-              <th>Hora</th>
-              <th>Empresa</th>
-              <th>Bus</th>
-              <th>Asiento</th>
-              <th>Precio</th>
-            </tr>
-          </thead>
-          <tbody>${rowsHtml}</tbody>
-        </table>
+        <div class="list">${rowsHtml}</div>
         <hr class="hr"/>
         <div class="row"><div>Total bruto</div><div>S/ ${successData.totalBruto.toFixed(2)}</div></div>
         <div class="row"><div>Comisión (${successData.comision}%)</div><div>S/ ${(successData.totalBruto * (successData.comision/100)).toFixed(2)}</div></div>
         <div class="row" style="font-weight:700;"><div>Total pagado</div><div>S/ ${successData.totalNeto.toFixed(2)}</div></div>
-        <p class="muted" style="margin-top:12px;">Gracias por su compra.</p>
+        <p class="footer">Acercarse a la Sucrusal de origen respectiva con su DNI 15 minutos antes del viaje.</p>
       </div>
       <script>window.onload = () => { window.print(); setTimeout(() => window.close(), 300); }<\/script>
     </body></html>`

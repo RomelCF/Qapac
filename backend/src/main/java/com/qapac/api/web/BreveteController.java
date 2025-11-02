@@ -2,8 +2,10 @@ package com.qapac.api.web;
 
 import com.qapac.api.domain.Brevete;
 import com.qapac.api.domain.Chofer;
+import com.qapac.api.domain.Empleado;
 import com.qapac.api.repository.BreveteRepository;
 import com.qapac.api.repository.ChoferRepository;
+import com.qapac.api.repository.EmpleadoRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,10 +17,12 @@ public class BreveteController {
 
     private final BreveteRepository breveteRepository;
     private final ChoferRepository choferRepository;
+    private final EmpleadoRepository empleadoRepository;
 
-    public BreveteController(BreveteRepository breveteRepository, ChoferRepository choferRepository) {
+    public BreveteController(BreveteRepository breveteRepository, ChoferRepository choferRepository, EmpleadoRepository empleadoRepository) {
         this.breveteRepository = breveteRepository;
         this.choferRepository = choferRepository;
+        this.empleadoRepository = empleadoRepository;
     }
 
     @PostMapping("/empleados/{idEmpleado}/brevete")
@@ -28,9 +32,6 @@ public class BreveteController {
         }
 
         var choferOpt = choferRepository.findByEmpleado_IdEmpleado(idEmpleado);
-        if (choferOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("El empleado no es un chofer");
-        }
 
         Brevete brevete = Brevete.builder()
                 .numero(req.numero)
@@ -39,8 +40,17 @@ public class BreveteController {
                 .build();
         brevete = breveteRepository.save(brevete);
 
-        Chofer chofer = choferOpt.get();
-        chofer.setBrevete(brevete);
+        Chofer chofer;
+        if (choferOpt.isPresent()) {
+            chofer = choferOpt.get();
+            chofer.setBrevete(brevete);
+        } else {
+            // Crear registro de Chofer para este empleado
+            var empOpt = empleadoRepository.findById(idEmpleado);
+            if (empOpt.isEmpty()) return ResponseEntity.badRequest().body("Empleado no existe");
+            Empleado e = empOpt.get();
+            chofer = Chofer.builder().empleado(e).brevete(brevete).build();
+        }
         choferRepository.save(chofer);
 
         return ResponseEntity.ok(brevete.getIdBrevete());

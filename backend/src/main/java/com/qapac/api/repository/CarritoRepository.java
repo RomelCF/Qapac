@@ -10,4 +10,5 @@ public interface CarritoRepository extends JpaRepository<Carrito, Integer> {
     List<Carrito> findByCliente_IdCliente(Integer idCliente);
     List<Carrito> findByCliente_IdClienteAndEstado(Integer idCliente, CarritoEstado estado);
     List<Carrito> findByCliente_IdClienteAndEstadoOrderByFechaCreacionDesc(Integer idCliente, CarritoEstado estado);
+    List<Carrito> findByEstado(CarritoEstado estado);
 }

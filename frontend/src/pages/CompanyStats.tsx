@@ -7,11 +7,8 @@ export default function CompanyStats() {
   useTheme()
   const [open, setOpen] = useState(false)
   const [email, setEmail] = useState<string>('')
-  const [range, setRange] = useState<'7d' | '30d' | '90d'>('30d')
-  const [month, setMonth] = useState<string>(() => {
-    const d = new Date()
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
-  })
+  const [fromDate, setFromDate] = useState<string>(() => { const end = new Date(); const start = new Date(); start.setDate(end.getDate()-29); return start.toISOString().slice(0,10) })
+  const [toDate, setToDate] = useState<string>(() => new Date().toISOString().slice(0,10))
   const [kpis, setKpis] = useState({ ingresos: 0, tickets: 0, ocupacion: 0, busesActivos: 0 })
   const [ventasSerie, setVentasSerie] = useState<Array<{ x: string; y: number }>>([])
   const [ocupacionRutas, setOcupacionRutas] = useState<Array<{ label: string; value: number }>>([])
@@ -41,14 +38,18 @@ export default function CompanyStats() {
     if (!empresaId) return
     void loadAll()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [empresaId, range, month])
+  }, [empresaId, fromDate, toDate])
 
   function computeFromTo(): { from: string; to: string } {
-    const days = range === '7d' ? 7 : range === '30d' ? 30 : 90
-    const end = new Date()
-    const start = new Date(); start.setDate(end.getDate() - (days - 1))
-    const to = end.toISOString().slice(0,10)
-    const from = start.toISOString().slice(0,10)
+    const from = fromDate
+    const to = toDate
+    if (!from || !to) {
+      const today = new Date().toISOString().slice(0,10)
+      return { from: from || to || today, to: to || from || today }
+    }
+    if (new Date(from) > new Date(to)) {
+      return { from: to, to: from }
+    }
     return { from, to }
   }
 
@@ -108,12 +109,9 @@ export default function CompanyStats() {
         <div className="w-full max-w-5xl mb-6 flex items-center justify-between gap-4">
           <h1 className="font-display text-3xl text-primary">Estadísticas</h1>
           <div className="flex items-center gap-2">
-            <select value={range} onChange={e=>setRange(e.target.value as any)} className="rounded-lg border border-border-soft bg-white/70 px-3 py-2 outline-none focus:border-primary">
-              <option value="7d">7 días</option>
-              <option value="30d">30 días</option>
-              <option value="90d">90 días</option>
-            </select>
-            <input type="month" value={month} onChange={e=>setMonth(e.target.value)} className="rounded-lg border border-border-soft bg-white/70 px-3 py-2 outline-none focus:border-primary" />
+            <input type="date" value={fromDate} onChange={e=>setFromDate(e.target.value)} className="rounded-lg border border-border-soft bg-white/70 px-3 py-2 outline-none focus:border-primary" />
+            <span className="text-text-secondary">a</span>
+            <input type="date" value={toDate} onChange={e=>setToDate(e.target.value)} className="rounded-lg border border-border-soft bg-white/70 px-3 py-2 outline-none focus:border-primary" />
           </div>
         </div>
 
@@ -129,7 +127,7 @@ export default function CompanyStats() {
           <div className="lg:col-span-2 rounded-xl border border-border-soft bg-white p-4">
             <div className="flex items-center justify-between mb-2">
               <h2 className="font-display text-lg">Ventas por día</h2>
-              <span className="text-text-secondary text-sm">{range}{loading ? ' · cargando...' : ''}</span>
+              <span className="text-text-secondary text-sm">{fromDate} a {toDate}{loading ? ' · cargando...' : ''}</span>
             </div>
             <LineChart data={ventasSerie} height={220} color="#3b82f6" />
           </div>

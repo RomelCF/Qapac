@@ -13,6 +13,9 @@ import com.qapac.api.web.dto.BusResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
+import org.springframework.http.HttpHeaders;
 
 import java.net.URI;
 import java.util.List;
@@ -131,4 +134,37 @@ public class BusController {
     }
 
     public record AsientoItem(Integer idAsiento, String codigo, String disponibilidad) {}
+
+    @GetMapping("/buses/{idBus}/imagen")
+    public ResponseEntity<byte[]> getImagen(@PathVariable Integer idBus) {
+        Optional<Bus> opt = busRepository.findById(idBus);
+        if (opt.isEmpty()) return ResponseEntity.notFound().build();
+        Bus b = opt.get();
+        byte[] img = b.getImagen();
+        if (img == null || img.length == 0) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate, max-age=0")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(img);
+    }
+
+    @PutMapping(value = "/buses/{idBus}/imagen", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadImagen(@PathVariable Integer idBus, @RequestParam("file") MultipartFile file) {
+        try {
+            Optional<Bus> opt = busRepository.findById(idBus);
+            if (opt.isEmpty()) return ResponseEntity.notFound().build();
+            if (file == null || file.isEmpty()) return ResponseEntity.badRequest().body("Archivo vacío");
+            // Validación básica de tamaño (5MB)
+            long max = 5L * 1024L * 1024L;
+            if (file.getSize() > max) {
+                return ResponseEntity.badRequest().body("La imagen supera el tamaño máximo de 5MB");
+            }
+            Bus b = opt.get();
+            b.setImagen(file.getBytes());
+            busRepository.save(b);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("No se pudo guardar la imagen: " + e.getMessage());
+        }
+    }
 }

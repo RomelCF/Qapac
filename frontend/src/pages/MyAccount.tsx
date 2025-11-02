@@ -45,6 +45,11 @@ export default function MyAccount() {
   const API_BASE = (import.meta as unknown as { env: Record<string, string> }).env?.VITE_API_BASE_URL || 'http://localhost:8080'
   const [loadError, setLoadError] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
+  // tiempo de reembolso (horas) - solo admin
+  const [trHours, setTrHours] = useState<number>(0)
+  const [trLoading, setTrLoading] = useState(false)
+  const [trSaving, setTrSaving] = useState(false)
+  const [trError, setTrError] = useState<string | null>(null)
 
   useEffect(() => {
     const e = localStorage.getItem('userEmail') || ''
@@ -111,6 +116,28 @@ export default function MyAccount() {
       } catch {}
     })()
   }, [])
+
+  useEffect(() => {
+    const loadTR = async () => {
+      if (tipo !== 'admin') return
+      setTrLoading(true)
+      setTrError(null)
+      try {
+        const res = await fetch(`${API_BASE}/config/reembolso`)
+        if (res.ok) {
+          const data = await res.json()
+          setTrHours(Number(data?.horas ?? 0))
+        } else {
+          setTrError('No se pudo cargar Tiempo de reembolso')
+        }
+      } catch {
+        setTrError('Error de red al cargar Tiempo de reembolso')
+      } finally {
+        setTrLoading(false)
+      }
+    }
+    loadTR()
+  }, [tipo])
 
   function onPickAvatar() {
     fileRef.current?.click()
@@ -180,6 +207,22 @@ export default function MyAccount() {
     const body = { nombre: empNombre, ruc: empRuc, razonSocial: empRazonSocial }
     const res = await fetch(`${API_BASE}/empresas/${idEmpresa}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     if (res.ok) { setOk(true); setMsg('Perfil de empresa actualizado') } else { setOk(false); setMsg('No se pudo actualizar empresa') }
+  }
+
+  async function onSaveTiempoReembolso(e: React.FormEvent) {
+    e.preventDefault()
+    if (trHours < 0) { setOk(false); setMsg('Las horas no pueden ser negativas'); return }
+    setTrSaving(true)
+    setMsg(null)
+    setOk(null)
+    try {
+      const res = await fetch(`${API_BASE}/config/reembolso`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ horas: trHours }) })
+      if (res.ok) { setOk(true); setMsg('Tiempo de reembolso actualizado') } else { const t = await res.text(); setOk(false); setMsg(t || 'No se pudo actualizar') }
+    } catch {
+      setOk(false); setMsg('Error de red al actualizar')
+    } finally {
+      setTrSaving(false)
+    }
   }
 
   return (
@@ -430,6 +473,21 @@ export default function MyAccount() {
             </button>
           </div>
         </section>
+
+        {tipo === 'admin' && (
+          <section className="mt-6 rounded-xl border-2 border-border-soft bg-background-secondary p-6">
+            <h2 className="font-display text-xl mb-4">Tiempo de reembolso (regla de cancelación)</h2>
+            <p className="text-sm text-text-secondary mb-3">Define cuántas horas antes de la partida ya no se permite cancelar un pasaje.</p>
+            {trError && <div className="text-red-700 text-sm mb-2">{trError}</div>}
+            <form onSubmit={onSaveTiempoReembolso} className="flex items-center gap-3">
+              <label htmlFor="trHours" className="sr-only">Horas</label>
+              <input id="trHours" type="number" min={0} value={trHours} onChange={e=>setTrHours(Number(e.target.value))} className="w-28 rounded-lg border border-border-soft bg-white/70 px-4 py-2 outline-none focus:border-primary" />
+              <span className="text-text-secondary">horas</span>
+              <button type="submit" disabled={trSaving} className="px-4 py-2 rounded-lg bg-primary text-background-light font-bold hover:bg-accent disabled:opacity-60">{trSaving ? 'Guardando...' : 'Guardar'}</button>
+              {trLoading && <span className="text-text-secondary text-sm">Cargando...</span>}
+            </form>
+          </section>
+        )}
       </div>
     </div>
   )

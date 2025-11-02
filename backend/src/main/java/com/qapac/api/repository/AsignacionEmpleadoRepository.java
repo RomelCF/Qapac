@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface AsignacionEmpleadoRepository extends JpaRepository<AsignacionEmpleado, Integer> {
     List<AsignacionEmpleado> findByAsignacionRuta_IdAsignacionRuta(Integer idAsignacionRuta);
+    boolean existsByEmpleado_IdEmpleado(Integer idEmpleado);
 }

@@ -21,7 +21,7 @@ export default function AdminEmployees() {
   const [showBreveteForm, setShowBreveteForm] = useState(false)
   const [breveteForm, setBreveteForm] = useState({ numero: '', fechaEmision: '', fechaVencimiento: '' })
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
-  const [form, setForm] = useState<FormState>({ dni: '', telefono: '', domicilio: '', nombres: '', apellidos: '', aniosExperiencia: '', fechaNacimiento: '', disponible: 'true' })
+  const [form, setForm] = useState<FormState>({ dni: '', telefono: '', domicilio: '', nombres: '', apellidos: '', aniosExperiencia: '', fechaNacimiento: '', disponible: 'true', tipoNuevo: 'chofer' })
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState<{ open: boolean, message: string }>({ open: false, message: '' })
   const API_BASE = (import.meta as unknown as { env: Record<string, string> }).env?.VITE_API_BASE_URL || 'http://localhost:8080'
@@ -46,7 +46,7 @@ export default function AdminEmployees() {
     tipo: string
     brevete?: Brevete
   }
-  type FormState = { dni: string; telefono: string; domicilio: string; nombres: string; apellidos: string; aniosExperiencia: string; fechaNacimiento: string; disponible: string }
+  type FormState = { dni: string; telefono: string; domicilio: string; nombres: string; apellidos: string; aniosExperiencia: string; fechaNacimiento: string; disponible: string; tipoNuevo: 'chofer' | 'azafato' }
 
   useEffect(() => { setEmail(localStorage.getItem('userEmail') || '') }, [])
   useEffect(() => { void loadEmpleados() }, [])
@@ -94,7 +94,7 @@ export default function AdminEmployees() {
 
   function onNew() {
     setEditing(null)
-    setForm({ dni: '', telefono: '', domicilio: '', nombres: '', apellidos: '', aniosExperiencia: '', fechaNacimiento: '', disponible: 'true' })
+    setForm({ dni: '', telefono: '', domicilio: '', nombres: '', apellidos: '', aniosExperiencia: '', fechaNacimiento: '', disponible: 'true', tipoNuevo: 'chofer' })
     setShowForm(true)
   }
 
@@ -108,7 +108,8 @@ export default function AdminEmployees() {
       apellidos: emp.apellidos, 
       aniosExperiencia: emp.aniosExperiencia?.toString() || '', 
       fechaNacimiento: emp.fechaNacimiento,
-      disponible: emp.disponible?.toString() || 'true'
+      disponible: emp.disponible?.toString() || 'true',
+      tipoNuevo: 'chofer'
     })
     setShowForm(true)
   }
@@ -235,8 +236,37 @@ export default function AdminEmployees() {
       const url = editing ? `${API_BASE}/empleados/${editing.idEmpleado}` : `${API_BASE}/empleados`
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       if (!res.ok) throw new Error('No se pudo guardar')
+      let newId: number | null = null
+      if (!editing) {
+        try { newId = await res.json() } catch {}
+      }
       setShowForm(false)
-      await loadEmpleados()
+      // Si marcó como chofer, pedir brevete inmediatamente
+      if (!editing && form.tipoNuevo === 'chofer' && newId) {
+        const nuevo: Empleado = {
+          idEmpleado: newId,
+          dni: form.dni,
+          telefono: form.telefono,
+          domicilio: form.domicilio,
+          nombres: form.nombres,
+          apellidos: form.apellidos,
+          aniosExperiencia: form.aniosExperiencia ? parseInt(form.aniosExperiencia) : 0,
+          fechaNacimiento: form.fechaNacimiento,
+          disponible: form.disponible === 'true',
+          tipo: 'chofer',
+        }
+        setSelectedEmpleado(nuevo)
+        setBreveteForm({ numero: '', fechaEmision: '', fechaVencimiento: '' })
+        setShowBreveteForm(true)
+      } else if (!editing && form.tipoNuevo === 'azafato' && newId) {
+        // Si marcó Azafato, crear registro azafato en backend
+        try {
+          await fetch(`${API_BASE}/empleados/${newId}/azafato`, { method: 'POST' })
+        } catch {}
+        await loadEmpleados()
+      } else {
+        await loadEmpleados()
+      }
     } catch (e: any) {
       alert(e.message || 'Error al guardar')
     } finally {
@@ -505,6 +535,22 @@ export default function AdminEmployees() {
                     <option value="false">No disponible</option>
                   </select>
                 </div>
+                {!editing && (
+                  <div className="md:col-span-2">
+                    <label className="text-sm text-text-secondary">Tipo de empleado</label>
+                    <select
+                      value={form.tipoNuevo}
+                      onChange={e => setForm(f => ({ ...f, tipoNuevo: e.target.value as 'chofer' | 'azafato' }))}
+                      className="w-full rounded-lg border border-border-soft bg-white/70 px-3 py-2 outline-none focus:border-primary"
+                    >
+                      <option value="chofer">Chofer</option>
+                      <option value="azafato">Azafato</option>
+                    </select>
+                    {form.tipoNuevo === 'chofer' && (
+                      <div className="text-xs text-text-secondary mt-1">Tras crear el empleado se solicitará registrar el brevete.</div>
+                    )}
+                  </div>
+                )}
                 <div className="md:col-span-2 flex items-center justify-end gap-2 mt-2">
                   <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg border border-border-soft hover:border-primary">Cancelar</button>
                   <button type="submit" disabled={saving} className="px-4 py-2 rounded-lg bg-primary text-background-light font-bold hover:bg-accent disabled:opacity-60">{saving ? 'Guardando...' : 'Guardar'}</button>

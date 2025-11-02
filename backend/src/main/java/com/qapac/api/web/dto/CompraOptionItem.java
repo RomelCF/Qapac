@@ -13,6 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class CompraOptionItem {
+    private Integer idBus;
     private Integer idAsignacionRuta;
     private String origenProvincia;
     private String destinoProvincia;

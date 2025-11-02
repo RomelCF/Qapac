@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Optional;
+import java.time.*;
 
 @RestController
 @RequestMapping("/pasajes")
@@ -25,19 +26,45 @@ public class PasajeController {
     private final AzafatoRepository azafatoRepository;
     private final TelefonoEmpresaRepository telefonoEmpresaRepository;
     private final AsientoRepository asientoRepository;
+    private final TiempoReembolsoRepository tiempoReembolsoRepository;
 
     public PasajeController(CarritoRepository carritoRepository,
                             AsignacionEmpleadoRepository asignacionEmpleadoRepository,
                             ChoferRepository choferRepository,
                             AzafatoRepository azafatoRepository,
                             TelefonoEmpresaRepository telefonoEmpresaRepository,
-                            AsientoRepository asientoRepository) {
+                            AsientoRepository asientoRepository,
+                            TiempoReembolsoRepository tiempoReembolsoRepository) {
         this.carritoRepository = carritoRepository;
         this.asignacionEmpleadoRepository = asignacionEmpleadoRepository;
         this.choferRepository = choferRepository;
         this.azafatoRepository = azafatoRepository;
         this.telefonoEmpresaRepository = telefonoEmpresaRepository;
         this.asientoRepository = asientoRepository;
+        this.tiempoReembolsoRepository = tiempoReembolsoRepository;
+    }
+
+    /**
+     * Marca automáticamente como 'completado' los pasajes pagados cuyo viaje ya llegó (fechaLlegada + horaLlegada < ahora).
+     * Retorna cuántos pasajes fueron actualizados.
+     */
+    @PostMapping("/auto-complete")
+    public ResponseEntity<Integer> autoCompleteArrived() {
+        ZoneId lima = ZoneId.of("America/Lima");
+        LocalDateTime now = LocalDateTime.now(lima);
+        List<Carrito> pagados = carritoRepository.findByEstado(CarritoEstado.pagado);
+        int updated = 0;
+        for (Carrito c : pagados) {
+            AsignacionRuta ar = c.getAsignacionRuta();
+            if (ar == null || ar.getFechaLlegada() == null || ar.getHoraLlegada() == null) continue;
+            LocalDateTime arrival = LocalDateTime.of(ar.getFechaLlegada(), ar.getHoraLlegada());
+            if (arrival.isBefore(now) || arrival.isEqual(now)) {
+                c.setEstado(CarritoEstado.completado);
+                carritoRepository.save(c);
+                updated++;
+            }
+        }
+        return ResponseEntity.ok(updated);
     }
 
     @GetMapping("/cliente/{idCliente}")
@@ -132,6 +159,18 @@ public class PasajeController {
         Optional<Carrito> opt = carritoRepository.findById(id);
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
         Carrito c = opt.get();
+        // Regla de negocio: no se puede cancelar dentro de N horas antes de la partida
+        int horas = tiempoReembolsoRepository.findById(1).map(tr -> tr.getHoras() != null ? tr.getHoras() : 0).orElse(0);
+        AsignacionRuta ar = c.getAsignacionRuta();
+        if (ar != null && ar.getFechaPartida() != null && ar.getHoraPartida() != null && horas > 0) {
+            ZoneId lima = ZoneId.of("America/Lima");
+            LocalDateTime ahora = LocalDateTime.now(lima);
+            LocalDateTime partida = LocalDateTime.of(ar.getFechaPartida(), ar.getHoraPartida());
+            LocalDateTime limite = partida.minusHours(horas);
+            if (!ahora.isBefore(limite)) {
+                return ResponseEntity.badRequest().body("No se puede cancelar el viaje " + horas + " horas antes de la partida");
+            }
+        }
         if (c.getEstado() == CarritoEstado.cancelado) {
             return ResponseEntity.ok().build();
         }

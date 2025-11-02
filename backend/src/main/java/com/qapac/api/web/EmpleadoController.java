@@ -130,5 +130,19 @@ public class EmpleadoController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/empleados/{id}/azafato")
+    public ResponseEntity<?> crearAzafato(@PathVariable("id") Integer id) {
+        var empOpt = empleadoRepository.findById(id);
+        if (empOpt.isEmpty()) return ResponseEntity.notFound().build();
+        if (azafatoRepository.existsByEmpleado_IdEmpleado(id)) {
+            return ResponseEntity.noContent().build();
+        }
+        var az = com.qapac.api.domain.Azafato.builder()
+                .empleado(empOpt.get())
+                .build();
+        azafatoRepository.save(az);
+        return ResponseEntity.ok().build();
+    }
+
     private boolean isBlank(String s) { return s == null || s.isBlank(); }
 }

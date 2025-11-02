@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import UserAvatar from '../components/UserAvatar'
 
 type OptionRow = {
+  idBus?: number
   idAsignacionRuta: number
   origen: string
   destino: string
@@ -25,6 +26,7 @@ export default function BuyTickets() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [detail, setDetail] = useState<OptionRow | null>(null)
+  const [detailImgSrc, setDetailImgSrc] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
   const [emailLabel, setEmailLabel] = useState('')
   const [adding, setAdding] = useState<number | null>(null)
@@ -50,6 +52,7 @@ export default function BuyTickets() {
         if (!res.ok) { setError('No se pudieron cargar opciones'); return }
         const items = await res.json()
         const mapped: OptionRow[] = (items || []).map((it: any) => ({
+          idBus: it.idBus,
           idAsignacionRuta: it.idAsignacionRuta,
           origen: it.origenProvincia ?? '-',
           destino: it.destinoProvincia ?? '-',
@@ -75,6 +78,31 @@ export default function BuyTickets() {
     }
     load()
   }, [])
+
+  useEffect(() => {
+    const loadImg = async () => {
+      if (!detail || !detail.idBus) { if (detailImgSrc) { URL.revokeObjectURL(detailImgSrc) } setDetailImgSrc(null); return }
+      try {
+        const res = await fetch(`${API_BASE}/buses/${detail.idBus}/imagen`)
+        if (res.ok) {
+          const blob = await res.blob()
+          const url = URL.createObjectURL(blob)
+          if (detailImgSrc) { URL.revokeObjectURL(detailImgSrc) }
+          setDetailImgSrc(url)
+        } else {
+          if (detailImgSrc) { URL.revokeObjectURL(detailImgSrc) }
+          setDetailImgSrc(null)
+        }
+      } catch {
+        if (detailImgSrc) { URL.revokeObjectURL(detailImgSrc) }
+        setDetailImgSrc(null)
+      }
+    }
+    loadImg()
+    return () => {
+      if (detailImgSrc) { URL.revokeObjectURL(detailImgSrc) }
+    }
+  }, [detail])
 
   useEffect(() => {
     if (!toast) return
@@ -310,6 +338,20 @@ export default function BuyTickets() {
                 </button>
               </div>
               <div className="p-4 grid md:grid-cols-2 gap-4 text-sm">
+                <div className="rounded-lg border border-border-soft p-3 bg-white/50 md:col-span-2">
+                  <div className="font-bold mb-2">Bus</div>
+                  <div className="flex items-center gap-3">
+                    {detailImgSrc ? (
+                      <img src={detailImgSrc} alt="Bus" className="h-28 w-auto rounded" />
+                    ) : (
+                      <span className="material-symbols-outlined text-4xl text-text-secondary">directions_bus</span>
+                    )}
+                    <div>
+                      <div className="text-text-secondary text-xs">Matrícula</div>
+                      <div className="font-semibold">{detail.busMatricula ?? '-'}</div>
+                    </div>
+                  </div>
+                </div>
                 <div className="rounded-lg border border-border-soft p-3 bg-white/50">
                   <div className="font-bold mb-1">Origen</div>
                   <div>{detail.sucursalOrigen?.nombre}</div>
@@ -328,9 +370,8 @@ export default function BuyTickets() {
                   <div className="text-text-secondary">Número: {detail.empresaNumero ?? '-'}</div>
                 </div>
                 <div className="rounded-lg border border-border-soft p-3 bg-white/50">
-                  <div className="font-bold mb-1">Bus</div>
-                  <div>Matrícula: {detail.busMatricula ?? '-'}</div>
-                  <div className="mt-2 font-bold">Choferes</div>
+                  <div className="font-bold mb-1">Tripulación</div>
+                  <div className="mt-1 font-bold">Choferes</div>
                   <ul className="list-disc pl-5 text-text-secondary">
                     {(detail.choferes ?? []).map((c, idx) => (<li key={idx}>{c}</li>))}
                   </ul>
@@ -351,15 +392,18 @@ export default function BuyTickets() {
           </div>
         )}
         {seatPicker && (
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50" role="dialog" aria-modal="true">
-            <div className="w-full max-w-3xl rounded-xl bg-background-secondary border-2 border-border-soft shadow-2xl">
+          <div className="fixed inset-0 z-50">
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-black/40" onClick={() => setSeatPicker(null)} />
+            {/* Drawer */}
+            <aside className="absolute right-0 top-0 h-full w-full max-w-md bg-background-secondary border-l-2 border-border-soft shadow-2xl flex flex-col transform transition-transform duration-300 translate-x-0">
               <div className="flex items-center justify-between p-4 border-b border-border-soft">
                 <h2 className="font-display text-xl">Selecciona tu asiento</h2>
                 <button onClick={() => setSeatPicker(null)} className="text-text-secondary hover:text-primary" aria-label="Cerrar">
                   <span className="material-symbols-outlined">close</span>
                 </button>
               </div>
-              <div className="p-4">
+              <div className="p-4 overflow-y-auto flex-1">
                 {seatPicker.loading ? (
                   <div className="text-text-secondary">Cargando asientos...</div>
                 ) : (
@@ -450,7 +494,7 @@ export default function BuyTickets() {
                 <button onClick={() => setSeatPicker(null)} className="px-4 py-2 rounded-lg border border-border-soft hover:border-primary">Cancelar</button>
                 <button disabled={!seatPicker.selectedIds.length || adding === seatPicker.idAsignacionRuta} onClick={confirmSelectedSeats} className="px-4 py-2 rounded-lg bg-primary text-white hover:opacity-90 disabled:opacity-60">Confirmar ({seatPicker.selectedIds.length || 0})</button>
               </div>
-            </div>
+            </aside>
           </div>
         )}
       </div>

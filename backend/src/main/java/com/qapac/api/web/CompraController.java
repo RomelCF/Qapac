@@ -87,6 +87,7 @@ public class CompraController {
             }
 
             CompraOptionItem item = CompraOptionItem.builder()
+                    .idBus(bus != null ? bus.getIdBus() : null)
                     .idAsignacionRuta(ar.getIdAsignacionRuta())
                     .origenProvincia(sOri != null ? sOri.getProvincia() : null)
                     .destinoProvincia(sDes != null ? sDes.getProvincia() : null)
