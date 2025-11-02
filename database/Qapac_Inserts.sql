@@ -47,101 +47,40 @@ INSERT INTO Ruta (id_sucursal_origen, id_sucursal_destino, id_empresa, precio, e
 (1, 3, 2, 90.00, 'activa');
 
 -- ==============================
--- 🔹 7. Buses
+-- 🔹 7. Buses (modificado con columna imagen)
 -- ==============================
-INSERT INTO Bus (matricula, capacidad, estado, id_empresa) VALUES
-('ABC-123', 40, 'disponible', 1),
-('XYZ-789', 36, 'disponible', 2);
+INSERT INTO Bus (matricula, capacidad, estado, id_empresa, imagen) VALUES
+('ABC-123', 40, 'disponible', 1, NULL),
+('XYZ-789', 36, 'disponible', 2, NULL);
 
 -- ==============================
 -- 🔹 8. Asientos - Bus 1 (40 asientos)
 -- ==============================
 INSERT INTO Asiento (codigo, id_bus, disponibilidad) VALUES
--- Piso 1
-('A1', 1, 'ocupado'),      -- Reservado por pasaje 1
-('A2', 1, 'disponible'),
-('A3', 1, 'disponible'),
-('A4', 1, 'disponible'),
-('B1', 1, 'disponible'),
-('B2', 1, 'disponible'),
-('B3', 1, 'disponible'),
-('B4', 1, 'disponible'),
-('C1', 1, 'disponible'),
-('C2', 1, 'disponible'),
-('C3', 1, 'disponible'),
-('C4', 1, 'disponible'),
-('D1', 1, 'disponible'),
-('D2', 1, 'disponible'),
-('D3', 1, 'disponible'),
-('D4', 1, 'disponible'),
-('E1', 1, 'disponible'),
-('E2', 1, 'disponible'),
-('E3', 1, 'disponible'),
-('E4', 1, 'disponible'),
--- Piso 2
-('F1', 1, 'disponible'),
-('F2', 1, 'disponible'),
-('F3', 1, 'disponible'),
-('F4', 1, 'disponible'),
-('G1', 1, 'disponible'),
-('G2', 1, 'disponible'),
-('G3', 1, 'disponible'),
-('G4', 1, 'disponible'),
-('H1', 1, 'disponible'),
-('H2', 1, 'disponible'),
-('H3', 1, 'disponible'),
-('H4', 1, 'disponible'),
-('I1', 1, 'disponible'),
-('I2', 1, 'disponible'),
-('I3', 1, 'disponible'),
-('I4', 1, 'disponible'),
-('J1', 1, 'disponible'),
-('J2', 1, 'disponible'),
-('J3', 1, 'disponible'),
-('J4', 1, 'disponible');
+('A1', 1, 'ocupado'), ('A2', 1, 'disponible'), ('A3', 1, 'disponible'), ('A4', 1, 'disponible'),
+('B1', 1, 'disponible'), ('B2', 1, 'disponible'), ('B3', 1, 'disponible'), ('B4', 1, 'disponible'),
+('C1', 1, 'disponible'), ('C2', 1, 'disponible'), ('C3', 1, 'disponible'), ('C4', 1, 'disponible'),
+('D1', 1, 'disponible'), ('D2', 1, 'disponible'), ('D3', 1, 'disponible'), ('D4', 1, 'disponible'),
+('E1', 1, 'disponible'), ('E2', 1, 'disponible'), ('E3', 1, 'disponible'), ('E4', 1, 'disponible'),
+('F1', 1, 'disponible'), ('F2', 1, 'disponible'), ('F3', 1, 'disponible'), ('F4', 1, 'disponible'),
+('G1', 1, 'disponible'), ('G2', 1, 'disponible'), ('G3', 1, 'disponible'), ('G4', 1, 'disponible'),
+('H1', 1, 'disponible'), ('H2', 1, 'disponible'), ('H3', 1, 'disponible'), ('H4', 1, 'disponible'),
+('I1', 1, 'disponible'), ('I2', 1, 'disponible'), ('I3', 1, 'disponible'), ('I4', 1, 'disponible'),
+('J1', 1, 'disponible'), ('J2', 1, 'disponible'), ('J3', 1, 'disponible'), ('J4', 1, 'disponible');
 
 -- ==============================
 -- 🔹 9. Asientos - Bus 2 (36 asientos)
 -- ==============================
 INSERT INTO Asiento (codigo, id_bus, disponibilidad) VALUES
--- Piso 1
-('A1', 2, 'ocupado'),      -- Reservado por pasaje 2
-('A2', 2, 'disponible'),
-('A3', 2, 'disponible'),
-('A4', 2, 'disponible'),
-('B1', 2, 'disponible'),
-('B2', 2, 'disponible'),
-('B3', 2, 'disponible'),
-('B4', 2, 'disponible'),
-('C1', 2, 'disponible'),
-('C2', 2, 'disponible'),
-('C3', 2, 'disponible'),
-('C4', 2, 'disponible'),
-('D1', 2, 'disponible'),
-('D2', 2, 'disponible'),
-('D3', 2, 'disponible'),
-('D4', 2, 'disponible'),
-('E1', 2, 'disponible'),
-('E2', 2, 'disponible'),
--- Piso 2
-('F1', 2, 'disponible'),
-('F2', 2, 'disponible'),
-('F3', 2, 'disponible'),
-('F4', 2, 'disponible'),
-('G1', 2, 'disponible'),
-('G2', 2, 'disponible'),
-('G3', 2, 'disponible'),
-('G4', 2, 'disponible'),
-('H1', 2, 'disponible'),
-('H2', 2, 'disponible'),
-('H3', 2, 'disponible'),
-('H4', 2, 'disponible'),
-('I1', 2, 'disponible'),
-('I2', 2, 'disponible'),
-('I3', 2, 'disponible'),
-('I4', 2, 'disponible'),
-('J1', 2, 'disponible'),
-('J2', 2, 'disponible');
+('A1', 2, 'ocupado'), ('A2', 2, 'disponible'), ('A3', 2, 'disponible'), ('A4', 2, 'disponible'),
+('B1', 2, 'disponible'), ('B2', 2, 'disponible'), ('B3', 2, 'disponible'), ('B4', 2, 'disponible'),
+('C1', 2, 'disponible'), ('C2', 2, 'disponible'), ('C3', 2, 'disponible'), ('C4', 2, 'disponible'),
+('D1', 2, 'disponible'), ('D2', 2, 'disponible'), ('D3', 2, 'disponible'), ('D4', 2, 'disponible'),
+('E1', 2, 'disponible'), ('E2', 2, 'disponible'), ('F1', 2, 'disponible'), ('F2', 2, 'disponible'),
+('F3', 2, 'disponible'), ('F4', 2, 'disponible'), ('G1', 2, 'disponible'), ('G2', 2, 'disponible'),
+('G3', 2, 'disponible'), ('G4', 2, 'disponible'), ('H1', 2, 'disponible'), ('H2', 2, 'disponible'),
+('H3', 2, 'disponible'), ('H4', 2, 'disponible'), ('I1', 2, 'disponible'), ('I2', 2, 'disponible'),
+('I3', 2, 'disponible'), ('I4', 2, 'disponible'), ('J1', 2, 'disponible'), ('J2', 2, 'disponible');
 
 -- ==============================
 -- 🔹 10. Viajes
@@ -151,15 +90,15 @@ INSERT INTO Viaje (id_ruta, id_bus, fecha_partida, fecha_llegada, hora_partida, 
 (2, 2, '2025-11-10', '2025-11-10', '09:00:00', '18:00:00');
 
 -- ==============================
--- 🔹 11. Empleados (CORREGIDO - disponibilidad según asignación)
+-- 🔹 11. Empleados
 -- ==============================
 INSERT INTO Empleado (dni, telefono, domicilio, nombres, apellidos, anios_experiencia, fecha_nacimiento, disponibilidad) VALUES
-('11112222', '987000111', 'Av. Grau 500', 'Carlos', 'Mendoza', 5, '1985-03-10', 'no disponible'),      -- Asignado a viaje 1
-('22223333', '987000222', 'Jr. Callao 600', 'Ana', 'Cáceres', 3, '1990-07-22', 'no disponible'),       -- Asignado a viaje 2
-('33334444', '987000333', 'Av. Tacna 700', 'José', 'Quispe', 2, '1992-11-11', 'no disponible'),        -- Asignado a viaje 1
-('44445555', '987000444', 'Jr. Arequipa 800', 'Pedro', 'Flores', 1, '1995-05-15', 'no disponible'),    -- Asignado a viaje 2
-('55556666', '987000555', 'Av. Venezuela 900', 'Laura', 'Rojas', 4, '1988-08-20', 'disponible'),       -- No asignado
-('66667777', '987000666', 'Jr. Cusco 1000', 'Miguel', 'Vargas', 6, '1983-12-05', 'disponible');        -- No asignado
+('11112222', '987000111', 'Av. Grau 500', 'Carlos', 'Mendoza', 5, '1985-03-10', 'no disponible'),
+('22223333', '987000222', 'Jr. Callao 600', 'Ana', 'Cáceres', 3, '1990-07-22', 'no disponible'),
+('33334444', '987000333', 'Av. Tacna 700', 'José', 'Quispe', 2, '1992-11-11', 'no disponible'),
+('44445555', '987000444', 'Jr. Arequipa 800', 'Pedro', 'Flores', 1, '1995-05-15', 'no disponible'),
+('55556666', '987000555', 'Av. Venezuela 900', 'Laura', 'Rojas', 4, '1988-08-20', 'disponible'),
+('66667777', '987000666', 'Jr. Cusco 1000', 'Miguel', 'Vargas', 6, '1983-12-05', 'disponible');
 
 -- ==============================
 -- 🔹 12. Brevete
@@ -174,26 +113,26 @@ INSERT INTO Brevete (fecha_emision, fecha_vencimiento, numero) VALUES
 -- 🔹 13. Choferes
 -- ==============================
 INSERT INTO Chofer (id_brevete, id_empleado) VALUES
-(1, 1),  -- Carlos - Asignado a viaje 1
-(2, 2),  -- Ana - Asignado a viaje 2
-(3, 5),  -- Laura - Disponible
-(4, 6);  -- Miguel - Disponible
+(1, 1),
+(2, 2),
+(3, 5),
+(4, 6);
 
 -- ==============================
--- 🔹 14. Azafato
+-- 🔹 14. Azafatos
 -- ==============================
 INSERT INTO Azafato (id_empleado) VALUES
-(3),  -- José - Asignado a viaje 1
-(4);  -- Pedro - Asignado a viaje 2
+(3),
+(4);
 
 -- ==============================
--- 🔹 15. Asignación de empleados a viajes
+-- 🔹 15. Asignación de empleados
 -- ==============================
 INSERT INTO AsignacionEmpleado (id_viaje, id_empleado) VALUES
-(1, 1),  -- Viaje 1: Chofer Carlos
-(1, 3),  -- Viaje 1: Azafato José
-(2, 2),  -- Viaje 2: Chofer Ana
-(2, 4);  -- Viaje 2: Azafato Pedro
+(1, 1),
+(1, 3),
+(2, 2),
+(2, 4);
 
 -- ==============================
 -- 🔹 16. Tipos de pago
@@ -232,17 +171,17 @@ INSERT INTO Tarjeta (id_cliente, id_metodo_pago, id_tipo_tarjeta, numero, fecha_
 -- 🔹 20. Pasajes
 -- ==============================
 INSERT INTO Pasaje (id_cliente, id_viaje, id_asiento, estado) VALUES
-(1, 1, 1, 'pagado'),     -- Asiento A1 del bus 1 (id_asiento = 1)
-(2, 2, 41, 'pendiente'); -- Asiento A1 del bus 2 (id_asiento = 41)
+(1, 1, 1, 'pagado'),
+(2, 2, 41, 'pendiente');
 
 -- ==============================
--- 🔹 21. Ventas (solo pasajes 'pagado')
+-- 🔹 21. Ventas
 -- ==============================
 INSERT INTO Venta (id_metodo_pago, id_tarjeta, fecha, hora) VALUES
 (1, 1, '2025-10-26', '14:30:00');
 
 -- ==============================
--- 🔹 22. Detalle de venta (solo para pasajes pagados)
+-- 🔹 22. Detalle de venta
 -- ==============================
 INSERT INTO DetalleVenta (id_venta, id_pasaje) VALUES
 (1, 1);
@@ -252,3 +191,8 @@ INSERT INTO DetalleVenta (id_venta, id_pasaje) VALUES
 -- ==============================
 INSERT INTO Administrador (id_usuario) VALUES
 (1);
+
+-- ==============================
+-- 🔹 24. TiempoReembolso
+-- ==============================
+INSERT INTO TiempoReembolso (id_tiempo_reembolso, horas) VALUES (1, 4);

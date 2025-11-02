@@ -81,6 +81,7 @@ CREATE TABLE Bus (
     capacidad INT NOT NULL,
     estado ENUM('disponible', 'en_ruta', 'mantenimiento', 'inactivo') DEFAULT 'disponible',
     id_empresa INT NOT NULL,
+    imagen LONGBLOB,
     FOREIGN KEY (id_empresa) REFERENCES Empresa(id_empresa) ON DELETE CASCADE,
     INDEX idx_matricula (matricula),
     INDEX idx_empresa (id_empresa),
@@ -143,7 +144,7 @@ CREATE TABLE Brevete (
     CHECK (fecha_vencimiento > fecha_emision)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla Chofer (id_brevete ahora es NULL)
+-- Tabla Chofer
 CREATE TABLE Chofer (
     id_chofer INT AUTO_INCREMENT PRIMARY KEY,
     id_brevete INT NULL,
@@ -220,7 +221,7 @@ CREATE TABLE Tarjeta (
     INDEX idx_tipo_tarjeta (id_tipo_tarjeta)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla Pasaje (con fecha_creacion agregada)
+-- Tabla Pasaje
 CREATE TABLE Pasaje (
     id_pasaje INT AUTO_INCREMENT PRIMARY KEY,
     id_cliente INT NOT NULL,
@@ -267,3 +268,9 @@ CREATE TABLE Administrador (
     FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario) ON DELETE CASCADE,
     INDEX idx_usuario (id_usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla TiempoReembolso
+CREATE TABLE TiempoReembolso (
+    id_tiempo_reembolso INT PRIMARY KEY,
+    horas INT NOT NULL
+);
